@@ -224,6 +224,42 @@ app.post("/validate-otp", async (req, res) => {
     }
 });
 
+//Route to forgot password using email
+app.post("/forgot-password", async (req, res) => {
+    try {
+      const user = await User.findOne({ email: req.body.email });
+      if (!user) {
+        return res.status(400).send("User not found");
+      }
+      const otp = Math.floor(100000 + Math.random() * 900000);
+      user.otp = otp;
+      await user.save();
+      res.send(`Your OTP for password reset is ${otp}`);
+    } catch (error) {
+      res.status(400).send(error);
+    }
+  });
+  
+//Route to reseting user password
+  app.post("/reset-password", async (req, res) => {
+    try {
+      const user = await User.findOne({ email: req.body.email });
+      if (!user) {
+        return res.status(400).send("User not found");
+      }
+      if (user.otp !== req.body.otp) {
+        return res.status(400).send("Incorrect OTP");
+      }
+      user.password = req.body.password;
+      user.otp = null;
+      await user.save();
+      res.send("Password reset successful");
+    } catch (error) {
+      res.status(400).send(error);
+    }
+  });
+  
+
 // Route to Login a User
 app.post("/login", async (req, res) => {
     try {
