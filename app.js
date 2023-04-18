@@ -224,7 +224,7 @@ app.post("/validate-otp", async (req, res) => {
     }
 });
 
-//Route to forgot password using email
+//Route to forgot password using email password
 app.post("/forgot-password", async (req, res) => {
     try {
       const user = await User.findOne({ email: req.body.email });
