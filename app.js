@@ -175,7 +175,10 @@ app.post("/register", async (req, res) => {
             email: req.body.email
         });
         if (user) {
-            return res.status(400).send("User already exists");
+            return res.status(400).send({
+                statusCode: 402,
+                message: "User already exists"
+            });
         }
         const otp = randomstring.generate({
             length: 6,
@@ -192,11 +195,17 @@ app.post("/register", async (req, res) => {
             isverified: false
         });
         await newUser.save();
-        res.send("OTP sent successfully");
+        res.send({
+            statusCode: 200,
+            message: "OTP sent successfully"
+        });
     } catch (error) {
-        res.status(400).send(error);
+        res.status(500).send({
+            message: "Internal server error"
+        });
     }
 });
+
 
 // Route to Validate OTP
 app.post("/validate-otp", async (req, res) => {
@@ -205,10 +214,16 @@ app.post("/validate-otp", async (req, res) => {
             email: req.body.email
         });
         if (!user) {
-            return res.status(400).send("User not found");
+            return res.status(404).send({
+                statuscode: 404,
+                message: "User not found"
+            });
         }
         if (user.otp !== req.body.otp) {
-            return res.status(400).send("Incorrect OTP");
+            return res.status(400).send({
+                statuscode: 400,
+                message: "Incorrect OTP"
+            });
         }
         user.otp = null;
         user.isverified = true;
@@ -217,72 +232,100 @@ app.post("/validate-otp", async (req, res) => {
             userId: user._id
         }, "secretkey");
         res.send({
+            statuscode: 200,
             token
         });
     } catch (error) {
-        res.status(400).send(error);
+        console.error(error);
+        res.status(500).send({
+            statuscode: 500,
+            message: "Internal server error"
+        });
     }
 });
+
 
 //Route to forgot password using email password
 app.post("/forgot-password", async (req, res) => {
     try {
-      const user = await User.findOne({ email: req.body.email });
-      if (!user) {
-        return res.status(400).send("User not found");
-      }
-      const otp = Math.floor(100000 + Math.random() * 900000);
-      user.otp = otp;
-      await user.save();
-      res.send(`Your OTP for password reset is ${otp}`);
+        const user = await User.findOne({ email: req.body.email });
+        if (!user) {
+            return res.status(404).send({
+                statuscode: 404,
+                message: "User not found"
+            });
+        }
+        const otp = Math.floor(100000 + Math.random() * 900000);
+        user.otp = otp;
+        await user.save();
+        res.send({
+            statuscode: 200,
+            message: `Your OTP for password reset is ${otp}`
+        });
     } catch (error) {
-      res.status(400).send(error);
+        console.error(error);
+        res.status(500).send({
+            statuscode: 500,
+            message: "Internal server error"
+        });
     }
-  });
+});
+
   
 //Route to reseting user password
-  app.post("/reset-password", async (req, res) => {
+app.post("/reset-password", async (req, res) => {
     try {
       const user = await User.findOne({ email: req.body.email });
       if (!user) {
-        return res.status(400).send("User not found");
+        return res.status(400).send({ statuscode: 400, message: "User not found" });
       }
       if (user.otp !== req.body.otp) {
-        return res.status(400).send("Incorrect OTP");
+        return res.status(400).send({ statuscode: 400, message: "Incorrect OTP" });
       }
-      user.password = req.body.password;
+      const hashedPassword = await bcrypt.hash(req.body.password, 10);
+      user.password = hashedPassword;
       user.otp = null;
       await user.save();
-      res.send("Password reset successful");
+      res.send({ statuscode: 200, message: "Password reset successful" });
     } catch (error) {
-      res.status(400).send(error);
+      res.status(400).send({ statuscode: 400, message: error.message });
     }
   });
+  
+
   
 
 // Route to Login a User
 app.post("/login", async (req, res) => {
     try {
-        const user = await User.findOne({
-            email: req.body.email
+      const user = await User.findOne({ email: req.body.email });
+      if (!user) {
+        return res.status(404).json({
+          statuscode: 404,
+          message: "Cannot find user",
         });
-        if (!user) {
-            return res.status(400).send("Cannot find user");
-        }
-        const valid = await bcrypt.compare(req.body.password, user.password);
-        if (!valid) {
-            return res.status(400).send("Incorrect password");
-        }
-        const token = jwt.sign({
-            userId: user._id
-        }, "secretkey");
-        res.send({
-            token
+      }
+      const valid = await bcrypt.compare(req.body.password, user.password);
+      if (!valid) {
+        return res.status(401).json({
+          statuscode: 401,
+          message: "Incorrect password",
         });
+      }
+      const token = jwt.sign({ userId: user._id }, "secretkey");
+      res.json({
+        statuscode: 200,
+        message: "Login successful",
+        token,
+      });
     } catch (error) {
-        res.status(400).send(error);
+      res.status(400).json({
+        statuscode: 400,
+        message: error.message,
+      });
     }
-});
+  });
+  
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
@@ -381,6 +424,7 @@ app.get("/categories", verifyToken, async (req, res) => {
         res.status(400).send(error);
     }
 });
+
 
 app.get("/deliveryoptions", verifyToken, async (req, res) => {
     try {
