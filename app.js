@@ -292,7 +292,37 @@ app.post("/reset-password", async (req, res) => {
     }
   });
   
-
+//Get user by id
+  app.get('/users/:id', async (req, res) => {
+    try {
+      const user = await User.findById(req.params.id);
+      if (!user) {
+        return res.status(404).json({
+          statuscode: 404,
+          message: 'User not found'
+        });
+      }
+      res.json({
+        statuscode: 200,
+        message: 'User found',
+        user
+      });
+    } catch (error) {
+      res.status(500).json({
+        statuscode: 500,
+        message: error.message
+      });
+    }
+  });
+  
+//Route to logout
+  app.post('/logout', (req, res) => {
+    res.clearCookie('token');
+    res.json({
+      statuscode: 200,
+      message: 'Logout successful'
+    });
+  });
   
 
 // Route to Login a User
@@ -317,6 +347,7 @@ app.post("/login", async (req, res) => {
         statuscode: 200,
         message: "Login successful",
         token,
+        userId: user._id,
       });
     } catch (error) {
       res.status(400).json({
