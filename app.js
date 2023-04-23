@@ -293,9 +293,9 @@ app.post("/reset-password", async (req, res) => {
   });
   
 //Get user by id
-  app.get('/users/:id', async (req, res) => {
+app.get('/users', async (req, res) => {
     try {
-      const user = await User.findById(req.params.id);
+      const user = await User.findById(req.query.id);
       if (!user) {
         return res.status(404).json({
           statuscode: 404,
@@ -314,6 +314,7 @@ app.post("/reset-password", async (req, res) => {
       });
     }
   });
+  
   
 //Route to logout
   app.post('/logout', (req, res) => {
