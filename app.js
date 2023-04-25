@@ -171,7 +171,7 @@ app.post("/add-delivery-option", async (req, res) => {
 });
 
 
-//const request = require('request');
+const request = require('request');
 
 app.post("/register", async (req, res) => {
     try {
