@@ -8,6 +8,8 @@ const mongoose = require("mongoose");
 const multer = require("multer");
 const swaggerUi = require("swagger-ui-express");
 const swaggerJsdoc = require("swagger-jsdoc");
+//const request = require('request');
+
 
 const app = express();
 app.use(bodyParser.json());
@@ -169,6 +171,8 @@ app.post("/add-delivery-option", async (req, res) => {
 });
 
 
+//const request = require('request');
+
 app.post("/register", async (req, res) => {
     try {
         const user = await User.findOne({
@@ -184,27 +188,44 @@ app.post("/register", async (req, res) => {
             length: 6,
             charset: "numeric",
         });
-        // Code to send SMS with OTP would go here
-        const hashedPassword = await bcrypt.hash(req.body.password, 10);
-        const newUser = new User({
-            name: req.body.name,
-            email: req.body.email,
-            password: hashedPassword,
-            phone: req.body.phone,
-            otp: otp,
-            isverified: false
-        });
-        await newUser.save();
-        res.send({
-            statusCode: 200,
-            message: "OTP sent successfully"
+
+        const options = {
+            method: 'GET',
+            url: `https://www.xml2sms.gsm.co.za/send/?username=anisadefreitas&password=bulkgde2023&number=${req.body.phone}&message=Your Yuzu OTP for registration is ${otp}&ems=1`
+        };
+
+        request(options, async function (error, response, body) {
+            if (error) {
+                console.error(error);
+                return res.status(500).send({
+                    statusCode: 500,
+                    message: "Failed to send OTP via SMS"
+                });
+            }
+
+            const hashedPassword = await bcrypt.hash(req.body.password, 10);
+            const newUser = new User({
+                name: req.body.name,
+                email: req.body.email,
+                password: hashedPassword,
+                phone: req.body.phone,
+                otp: otp,
+                isverified: false
+            });
+            await newUser.save();
+            res.send({
+                statusCode: 200,
+                message: " OTP Has been send to your mobile number please use it to verify your account"
+            });
         });
     } catch (error) {
+        console.error(error);
         res.status(500).send({
             message: "Internal server error"
         });
     }
 });
+
 
 
 // Route to Validate OTP
@@ -246,21 +267,42 @@ app.post("/validate-otp", async (req, res) => {
 
 
 //Route to forgot password using email password
+const request = require('request');
+
+
+
 app.post("/forgot-password", async (req, res) => {
     try {
         const user = await User.findOne({ email: req.body.email });
         if (!user) {
             return res.status(404).send({
                 statuscode: 404,
-                message: "User not found"
+                message: "User email does not exist"
             });
         }
         const otp = Math.floor(100000 + Math.random() * 900000);
         user.otp = otp;
         await user.save();
-        res.send({
-            statuscode: 200,
-            message: `Your OTP for password reset is ${otp}`
+
+        const options = {
+            method: 'GET',
+            url: `https://www.xml2sms.gsm.co.za/send/?username=anisadefreitas&password=bulkgde2023&number=${user.phone}&message=Your Yuzu OTP for password reset is ${otp}&ems=1`
+        };
+
+        request(options, function (error, response, body) {
+            if (error) {
+                console.error(error);
+                return res.status(500).send({
+                    statuscode: 500,
+                    message: "Failed to send OTP via SMS"
+                });
+            }
+
+            console.log(body);
+            res.send({
+                statuscode: 200,
+                message: `Your Yuzu OTP for password reset has been sent to ${user.phone}`
+            });
         });
     } catch (error) {
         console.error(error);
@@ -270,6 +312,8 @@ app.post("/forgot-password", async (req, res) => {
         });
     }
 });
+
+
 
   
 //Route to reseting user password

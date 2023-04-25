@@ -17,6 +17,7 @@
     "nodemailer": "^6.9.1",
     "nodemon": "^2.0.20",
     "randomstring": "^1.2.3",
+    "request": "^2.88.2",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^4.6.2"
   }
