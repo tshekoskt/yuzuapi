@@ -418,27 +418,31 @@ const upload = multer({
 
 app.post("/post-rental-item", verifyToken, upload.array("photos", 5), async (req, res) => {
     try {
-        const rentalItem = new RentalItem({
-            make: req.body.make,
-            model: req.body.model,
-            description: req.body.description,
-            year: req.body.year,
-            photos: req.files.map((file) => file.path),
-            category: req.body.categoryId,
-            postedBy: req.userId,
-            available: true,
-        });
-        await rentalItem.save();
-        res.status(201).send({message: "Rental item posted successfully", rentalItem});
+      const rentalItemData = req.body;
+  
+      const rentalItem = new RentalItem({
+        make: rentalItemData.make,
+        model: rentalItemData.model,
+        description: rentalItemData.description,
+        year: rentalItemData.year,
+        photos: req.files.map((file) => file.path),
+        category: rentalItemData.categoryId,
+        postedBy: req.userId,
+        available: true,
+      });
+  
+      await rentalItem.save();
+      res.status(201).send({message: "Rental item posted successfully", rentalItem});
     } catch (error) {
-        console.error(error);
-        if (error instanceof mongoose.Error.ValidationError) {
-            res.status(400).send({message: "Validation error", errors: error.errors});
-        } else {
-            res.status(500).send({message: "Server error"});
-        }
+      console.error(error);
+      if (error instanceof mongoose.Error.ValidationError) {
+        res.status(400).send({message: "Validation error", errors: error.errors});
+      } else {
+        res.status(500).send({message: "Server error"});
+      }
     }
-});
+  });
+  
 
 
 
