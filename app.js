@@ -403,7 +403,7 @@ app.post("/login", async (req, res) => {
   });
   
 
-const storage = multer.diskStorage({
+  const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         cb(null, "uploads");
     },
@@ -429,11 +429,17 @@ app.post("/post-rental-item", verifyToken, upload.array("photos", 5), async (req
             available: true,
         });
         await rentalItem.save();
-        res.send("Rental item posted successfully");
+        res.status(201).send({message: "Rental item posted successfully", rentalItem});
     } catch (error) {
-        res.status(400).send(error);
+        console.error(error);
+        if (error instanceof mongoose.Error.ValidationError) {
+            res.status(400).send({message: "Validation error", errors: error.errors});
+        } else {
+            res.status(500).send({message: "Server error"});
+        }
     }
 });
+
 
 
 // Route to Rent an Item
