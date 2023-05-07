@@ -442,6 +442,32 @@ app.post("/post-rental-item", verifyToken, upload.array("photos", 5), async (req
 });
 
 
+app.post("/post-rental-item-public", upload.array("photos", 5), async (req, res) => {
+    try {
+        const rentalItem = new RentalItem({
+            make: req.body.make,
+            model: req.body.model,
+            description: req.body.description,
+            year: req.body.year,
+            photos: req.files.map((file) => file.path),
+            category: req.body.categoryId,
+            postedBy: req.body.postedBy,
+            available: true,
+        });
+        await rentalItem.save();
+        res.status(201).send({message: "Rental item posted successfully", rentalItem});
+    } catch (error) {
+        console.error(error);
+        if (error instanceof mongoose.Error.ValidationError) {
+            res.status(400).send({message: "Validation error", errors: error.errors});
+        } else {
+            res.status(500).send({message: "Server error", error: error.errors });
+            console.log('error message' , error)
+        }
+    }
+});
+
+
 
 // Route to Rent an Item
 app.post("/rent-item", verifyToken, async (req, res) => {
