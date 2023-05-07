@@ -403,7 +403,7 @@ app.post("/login", async (req, res) => {
   });
   
 
-  const storage = multer.diskStorage({
+const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         cb(null, "uploads");
     },
@@ -435,7 +435,8 @@ app.post("/post-rental-item", verifyToken, upload.array("photos", 5), async (req
         if (error instanceof mongoose.Error.ValidationError) {
             res.status(400).send({message: "Validation error", errors: error.errors});
         } else {
-            res.status(500).send({message:  error.errors});
+            res.status(500).send({message: "Server error", error: error.errors });
+            console.log('error message' , error)
         }
     }
 });
