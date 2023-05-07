@@ -435,7 +435,7 @@ app.post("/post-rental-item", verifyToken, upload.array("photos", 5), async (req
         if (error instanceof mongoose.Error.ValidationError) {
             res.status(400).send({message: "Validation error", errors: error.errors});
         } else {
-            res.status(500).send({message: "Server error"});
+            res.status(500).send({message: error});
         }
     }
 });
