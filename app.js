@@ -84,6 +84,7 @@ const rentalItemSchema = new mongoose.Schema({
     startdate: Date,
     enddate: Date,
     photos: [String],
+    pictures: [String],
     category: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Category",
@@ -450,6 +451,7 @@ app.post("/post-rental-item-public", upload.array("photos", 5), async (req, res)
             description: req.body.description,
             year: req.body.year,
             photos: req.files.map((file) => file.path),
+            pictures: req.body.pictures,
             category: req.body.categoryId,
             postedBy: req.body.postedBy,
             available: true,
