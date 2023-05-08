@@ -339,7 +339,8 @@ app.post("/reset-password", async (req, res) => {
 
   app.post("/reset-passwords", async (req, res) => {
     try {
-      const user = await User.findById(req.user._id);
+      const userId = req.body.userId;
+      const user = await User.findById(userId);
       if (!user) {
         return res.status(400).send({ statuscode: 400, message: "User not found" });
       }
@@ -355,6 +356,7 @@ app.post("/reset-password", async (req, res) => {
       res.status(400).send({ statuscode: 400, message: error.message });
     }
   });
+  
   
   
 //Get user by id
