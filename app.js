@@ -336,6 +336,26 @@ app.post("/reset-password", async (req, res) => {
       res.status(400).send({ statuscode: 400, message: error.message });
     }
   });
+
+  app.post("/reset-passwords", async (req, res) => {
+    try {
+      const user = await User.findById(req.user._id);
+      if (!user) {
+        return res.status(400).send({ statuscode: 400, message: "User not found" });
+      }
+      const isMatch = await bcrypt.compare(req.body.currentPassword, user.password);
+      if (!isMatch) {
+        return res.status(400).send({ statuscode: 400, message: "Incorrect current password" });
+      }
+      const hashedPassword = await bcrypt.hash(req.body.newPassword, 10);
+      user.password = hashedPassword;
+      await user.save();
+      res.send({ statuscode: 200, message: "Password reset successful" });
+    } catch (error) {
+      res.status(400).send({ statuscode: 400, message: error.message });
+    }
+  });
+  
   
 //Get user by id
 app.get('/users', async (req, res) => {
