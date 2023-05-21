@@ -103,6 +103,35 @@ const rentalItemSchema = new mongoose.Schema({
     }
 });
 
+// Define RentalItem Schema
+const rentalProductSchema = new mongoose.Schema({
+    make: String,
+    model: String,
+    description: String,
+    year: Number,
+    available: Boolean,
+    startdate: Date,
+    enddate: Date,
+    photos: [String],
+    pictures: [String],
+    category: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Category",
+    },
+    rentedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+    },
+    postedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+    },
+    deliveryoption: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "DeliveryOption"
+    }
+});
+
 // Define Review Schema
 const reviewSchema = new mongoose.Schema({
     rating: Number,
@@ -120,6 +149,7 @@ const reviewSchema = new mongoose.Schema({
 // Compile Schema into Models
 const User = mongoose.model("User", userSchema);
 const RentalItem = mongoose.model("RentalItem", rentalItemSchema);
+const RentalProduct = mongoose.model("RentalProduct", rentalProductSchema);
 const Review = mongoose.model("Review", reviewSchema);
 const Category = mongoose.model("Category", categorySchema);
 const DeliveryOption = mongoose.model("DeliveryOption", deliveryOptionsSchema);
@@ -467,7 +497,7 @@ app.post("/post-rental-item", verifyToken, upload.array("photos", 5), async (req
 
 app.post("/post-rental-item-public", upload.array("photos", 5), async (req, res) => {
     try {
-        const rentalItem = new RentalItem({
+        const rentalProduct = new RentalProduct({
             make: req.body.make,
             model: req.body.model,
             description: req.body.description,
@@ -478,8 +508,8 @@ app.post("/post-rental-item-public", upload.array("photos", 5), async (req, res)
             postedBy: req.body.postedBy,
             available: true,
         });
-        await rentalItem.save();
-        res.status(201).send({message: "Rental item posted successfully", rentalItem});
+        await rentalProduct.save();
+        res.status(201).send({message: "Rental item posted successfully", rentalProduct});
     } catch (error) {
         console.error(error);
         if (error instanceof mongoose.Error.ValidationError) {
