@@ -522,6 +522,23 @@ app.post("/post-rental-item-public", upload.array("photos", 5), async (req, res)
 });
 
 
+app.get("/post-rental-item-public", async (req, res) => {
+    try {
+      const userId = req.query.userId;
+  
+      // Add your logic here to fetch the rental items by user ID or perform any other operations
+  
+      // Example response
+      const rentalItems = await RentalProduct.find({ postedBy: userId });
+      res.status(200).send({ message: "Rental items retrieved successfully", rentalItems });
+    } catch (error) {
+      console.error(error);
+      res.status(500).send({ message: "Server error", error });
+    }
+  });
+  
+
+
 
 // Route to Rent an Item
 app.post("/rent-item", verifyToken, async (req, res) => {
