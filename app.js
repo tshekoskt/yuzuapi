@@ -536,6 +536,20 @@ app.get("/post-rental-item-public", async (req, res) => {
       res.status(500).send({ message: "Server error", error });
     }
   });
+
+  app.get("/rentals", async (req, res) => {
+    try {
+      // Add your logic here to fetch all rental items or perform any other operations
+  
+      // Example response
+      const rentalItems = await RentalProduct.find();
+      res.status(200).send({ message: "All rental items retrieved successfully", rentalItems });
+    } catch (error) {
+      console.error(error);
+      res.status(500).send({ message: "Server error", error });
+    }
+  });
+  
   
 
 
