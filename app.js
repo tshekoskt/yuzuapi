@@ -549,7 +549,7 @@ app.get('/post-rental-item-public', async (req, res) => {
       rentalItems.map(async (rentalItem) => {
         const imageUrls = await Promise.all(
           rentalItem.photos.map((photo) => {
-            const imageUrl = `http://144.126.196.146:3000/images/${path.basename(photo)}`;
+            const imageUrl = `http://144.126.196.146:3000/images/${photo}`;
             return imageUrl;
           })
         );
