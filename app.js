@@ -495,41 +495,39 @@ app.post("/post-rental-item", verifyToken, upload.array("photos", 5), async (req
 });
 
 
-
-
   
 const serverUrl = "http://144.126.196.146:3000"; // Replace with your server's URL
 
 app.post("/post-rental-item-public", upload.array("photos", 5), async (req, res) => {
-  try {
-    const rentalProduct = new RentalProduct({
-      make: req.body.make,
-      model: req.body.model,
-      description: req.body.description,
-      year: req.body.year,
-      photos: req.files.map((file) => `${serverUrl}/${file.filename}`),
-      pictures: req.body.pictures,
-      category: req.body.categoryId,
-      postedBy: req.body.postedBy,
-      available: true,
-    });
-    await rentalProduct.save();
-
-    res.status(201).send({
-      message: "Rental item posted successfully",
-      rentalProduct,
-      imageUrls: req.files.map((file) => `${serverUrl}/${file.filename}`),
-    });
-  } catch (error) {
-    console.error(error);
-    if (error instanceof mongoose.Error.ValidationError) {
-      res.status(400).send({ message: "Validation error", errors: error.errors });
-    } else {
-      res.status(500).send({ message: "Server error", error: error.errors });
-      console.log("error message", error);
+    try {
+      const rentalProduct = new RentalProduct({
+        make: req.body.make,
+        model: req.body.model,
+        description: req.body.description,
+        year: req.body.year,
+        photos: req.files.map((file) => `${serverUrl}/uploads/${file.filename}`), // Add the file path to the image URL
+        pictures: req.body.pictures,
+        category: req.body.categoryId,
+        postedBy: req.body.postedBy,
+        available: true,
+      });
+      await rentalProduct.save();
+  
+      res.status(201).send({
+        message: "Rental item posted successfully",
+        rentalProduct,
+        imageUrls: req.files.map((file) => `${serverUrl}/uploads/${file.filename}`), // Add the file path to the image URL
+      });
+    } catch (error) {
+      console.error(error);
+      if (error instanceof mongoose.Error.ValidationError) {
+        res.status(400).send({ message: "Validation error", errors: error.errors });
+      } else {
+        res.status(500).send({ message: "Server error", error: error.errors });
+        console.log("error message", error);
+      }
     }
-  }
-});
+  });
 
   
 
