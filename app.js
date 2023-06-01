@@ -13,6 +13,7 @@ const swaggerJsdoc = require("swagger-jsdoc");
 
 const app = express();
 app.use(bodyParser.json());
+app.use("/uploads", express.static("uploads"));
 
 const options = {
     swaggerDefinition: {
