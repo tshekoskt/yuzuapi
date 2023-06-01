@@ -455,8 +455,7 @@ app.post("/login", async (req, res) => {
     }
   });
   
-
-const storage = multer.diskStorage({
+  const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         cb(null, "uploads");
     },
@@ -469,7 +468,8 @@ const upload = multer({
     storage
 });
 
-app.post("/post-rental-item", verifyToken, upload.array("photos", 5), async (req, res) => {
+
+app.post("/post-rental-item",  upload.array("photos", 5), async (req, res) => {
     try {
         const rentalItem = new RentalItem({
             make: req.body.make,
@@ -495,6 +495,18 @@ app.post("/post-rental-item", verifyToken, upload.array("photos", 5), async (req
 });
 
 
+/* const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, "uploads");
+    },
+    filename: (req, file, cb) => {
+        cb(null, `${Date.now()}-${file.originalname}`);
+    },
+});
+
+const upload = multer({
+    storage
+}); */
   
 const serverUrl = "http://144.126.196.146:3000"; // Replace with your server's URL
 
