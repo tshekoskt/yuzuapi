@@ -46,6 +46,7 @@ mongoose.connect("mongodb+srv://yuzuadmin:yuzuadmin123@cluster0.twbmhw7.mongodb.
 const userSchema = new mongoose.Schema({
     name: String,
     surname: String,
+    isAdmin: Boolean,
     email: String,
     birthdate: Date,
     password: String,
@@ -261,6 +262,37 @@ app.post("/register", async (req, res) => {
 });
 
 
+app.patch("/update-profile", async (req, res) => {
+    try {
+      const userId = req.body.userId; // Assuming you have the user ID in the request body
+      const newName = req.body.name; // New name value
+      const newSurname = req.body.surname; // New surname value
+  
+      const user = await User.findById(userId);
+      if (!user) {
+        return res.status(404).send({
+          statuscode: 404,
+          message: "User not found"
+        });
+      }
+  
+      user.name = newName;
+      user.surname = newSurname;
+      await user.save();
+  
+      res.send({
+        statuscode: 200,
+        message: "Profile updated successfully"
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).send({
+        statuscode: 500,
+        message: "Internal server error"
+      });
+    }
+  });
+  
 
 // Route to Validate OTP
 app.post("/validate-otp", async (req, res) => {
