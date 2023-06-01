@@ -531,6 +531,34 @@ app.post("/post-rental-item-public", upload.array("photos", 5), async (req, res)
     }
   });
 
+  app.patch("/update-rental-item", async (req, res) => {
+    try {
+      const { itemId, available } = req.body;
+  
+      if (!itemId || !available) {
+        return res.status(400).send({ message: "itemId and available fields are required" });
+      }
+  
+      // Update the rental item in the database
+      const updatedItem = await RentalProduct.findByIdAndUpdate(
+        itemId,
+        { available },
+        { new: true }
+      );
+  
+      if (!updatedItem) {
+        return res.status(404).send({ message: "Rental item not found" });
+      }
+  
+      res.status(200).send({
+        message: "Rental item updated successfully",
+        updatedItem,
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).send({ message: "Server error", error: error.errors });
+    }
+  });
   
 
 
