@@ -490,6 +490,23 @@ app.post("/login", async (req, res) => {
     }
   });
   
+
+  app.get("/users", async (req, res) => {
+    try {
+      const users = await User.find();
+      res.send({
+        statuscode: 200,
+        users
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).send({
+        statuscode: 500,
+        message: "Internal server error"
+      });
+    }
+  });
+  
   
 /* app.post("/post-rental-item",  upload.array("photos", 5), async (req, res) => {
     try {
