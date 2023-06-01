@@ -8,6 +8,7 @@ const mongoose = require("mongoose");
 const multer = require("multer");
 const swaggerUi = require("swagger-ui-express");
 const swaggerJsdoc = require("swagger-jsdoc");
+const cors = require("cors"); 
 //const request = require('request');
 
 
@@ -15,6 +16,7 @@ const app = express();
 app.use(bodyParser.json());
 app.use("/uploads", express.static("uploads"));
 
+app.use(cors());
 const options = {
     swaggerDefinition: {
         openapi: "3.0.0",
