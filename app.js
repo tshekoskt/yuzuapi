@@ -495,47 +495,76 @@ app.post("/post-rental-item", verifyToken, upload.array("photos", 5), async (req
 });
 
 
-app.post("/post-rental-item-public", upload.array("photos", 5), async (req, res) => {
+
+
+  
+  app.post("/post-rental-item-public", upload.array("photos", 5), async (req, res) => {
     try {
-        const rentalProduct = new RentalProduct({
-            make: req.body.make,
-            model: req.body.model,
-            description: req.body.description,
-            year: req.body.year,
-            photos: req.files.map((file) => file.path),
-            pictures: req.body.pictures,
-            category: req.body.categoryId,
-            postedBy: req.body.postedBy,
-            available: true,
-        });
-        await rentalProduct.save();
-        res.status(201).send({message: "Rental item posted successfully", rentalProduct});
+      const rentalProduct = new RentalProduct({
+        make: req.body.make,
+        model: req.body.model,
+        description: req.body.description,
+        year: req.body.year,
+        photos: req.files.map((file) => file.path),
+        pictures: req.body.pictures,
+        category: req.body.categoryId,
+        postedBy: req.body.postedBy,
+        available: true,
+      });
+      await rentalProduct.save();
+  
+      // Generate image URLs based on the server's URL or a specific base URL
+      const serverUrl = "http://144.126.196.146:3000"; // Replace with your server's URL
+      const imageUrls = req.files.map((file) => `${serverUrl}/${file.filename}`);
+  
+      res.status(201).send({
+        message: "Rental item posted successfully",
+        rentalProduct,
+        imageUrls,
+      });
     } catch (error) {
-        console.error(error);
-        if (error instanceof mongoose.Error.ValidationError) {
-            res.status(400).send({message: "Validation error", errors: error.errors});
-        } else {
-            res.status(500).send({message: "Server error", error: error.errors });
-            console.log('error message' , error)
-        }
+      console.error(error);
+      if (error instanceof mongoose.Error.ValidationError) {
+        res.status(400).send({ message: "Validation error", errors: error.errors });
+      } else {
+        res.status(500).send({ message: "Server error", error: error.errors });
+        console.log("error message", error);
+      }
     }
+  });
+  
+
+
+const path = require('path');
+
+app.get('/post-rental-item-public', async (req, res) => {
+  try {
+    const userId = req.query.userId;
+
+    // Fetch the rental items by user ID or perform any other necessary operations
+    const rentalItems = await RentalProduct.find({ postedBy: userId });
+
+    // Generate image URLs for each rental item
+    const rentalItemsWithImages = await Promise.all(
+      rentalItems.map(async (rentalItem) => {
+        const imageUrls = await Promise.all(
+          rentalItem.photos.map((photo) => {
+            const imageUrl = `http://144.126.196.146:3000/images/${path.basename(photo)}`;
+            return imageUrl;
+          })
+        );
+        return { ...rentalItem.toObject(), imageUrls };
+      })
+    );
+
+    res.status(200).send({ message: 'Rental items retrieved successfully', rentalItems: rentalItemsWithImages });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({ message: 'Server error', error });
+  }
 });
 
 
-app.get("/post-rental-item-public", async (req, res) => {
-    try {
-      const userId = req.query.userId;
-  
-      // Add your logic here to fetch the rental items by user ID or perform any other operations
-  
-      // Example response
-      const rentalItems = await RentalProduct.find({ postedBy: userId });
-      res.status(200).send({ message: "Rental items retrieved successfully", rentalItems });
-    } catch (error) {
-      console.error(error);
-      res.status(500).send({ message: "Server error", error });
-    }
-  });
 
   app.get("/rentals", async (req, res) => {
     try {
