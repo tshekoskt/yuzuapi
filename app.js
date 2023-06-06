@@ -206,60 +206,147 @@ app.post("/add-delivery-option", async (req, res) => {
 });
 
 
-const request = require('request');
 
-app.post("/register", async (req, res) => {
-    try {
-        const user = await User.findOne({
-            email: req.body.email
-        });
-        if (user) {
-            return res.status(400).send({
-                statusCode: 402,
-                message: "User already exists"
-            });
-        }
-        const otp = randomstring.generate({
-            length: 6,
-            charset: "numeric",
-        });
 
-        const options = {
-            method: 'GET',
-            url: `https://www.xml2sms.gsm.co.za/send/?username=anisadefreitas&password=bulkgde2023&number=${req.body.phone}&message=Your Yuzu OTP for registration is ${otp}&ems=1`
-        };
-
-        request(options, async function (error, response, body) {
-            if (error) {
-                console.error(error);
-                return res.status(500).send({
-                    statusCode: 500,
-                    message: "Failed to send OTP via SMS"
-                });
-            }
-
-            const hashedPassword = await bcrypt.hash(req.body.password, 10);
-            const newUser = new User({
-                name: req.body.name,
-                email: req.body.email,
-                password: hashedPassword,
-                phone: req.body.phone,
-                otp: otp,
-                isverified: false
-            });
-            await newUser.save();
-            res.send({
-                statusCode: 200,
-                message: " OTP Has been send to your mobile number please use it to verify your account"
-            });
-        });
-    } catch (error) {
-        console.error(error);
-        res.status(500).send({
-            message: "Internal server error"
-        });
+app.post('/register', async (req, res) => {
+  try {
+    const user = await User.findOne({ email: req.body.email });
+    if (user) {
+      return res.status(400).send({
+        statusCode: 400,
+        message: 'User already exists',
+      });
     }
+
+    const otp = randomstring.generate({
+      length: 6,
+      charset: 'numeric',
+    });
+
+    let newUser;
+
+    if (req.body.isAdmin) {
+      const temporaryPassword = randomstring.generate({
+        length: 8,
+        charset: 'alphanumeric',
+      });
+    
+      // Check if the password meets the requirements
+      const hasUppercase = /[A-Z]/.test(temporaryPassword);
+      const hasLowercase = /[a-z]/.test(temporaryPassword);
+      const hasNumber = /[0-9]/.test(temporaryPassword);
+    
+      if (hasUppercase && hasLowercase && hasNumber) {
+        // Password meets the requirements, assign it to newUser
+        newUser = {
+          password: temporaryPassword,
+        };
+      } else {
+        // Regenerate the password until it meets the requirements
+        while (!(hasUppercase && hasLowercase && hasNumber)) {
+          newUser = {
+            password: randomstring.generate({
+              length: 8,
+              charset: 'alphanumeric',
+            }),
+          };
+    
+          const hasUppercase = /[A-Z]/.test(newUser.password);
+          const hasLowercase = /[a-z]/.test(newUser.password);
+          const hasNumber = /[0-9]/.test(newUser.password);
+        }
+      }
+    
+
+      
+
+      const transporter = nodemailer.createTransport({
+        host: 'smtp-relay.sendinblue.com',
+        port: 587,
+        secure: false, // or true if required
+        auth: {
+          user: 'tester@pulego.co.za',
+          pass: 'HRzMT6a2jBtAPKxW',
+        },
+      });
+      
+
+      const mailOptions = {
+        from: 'tester@pulego.co.za',
+        to: req.body.email,
+        subject: 'Admin Account Information',
+        text: `Your admin account has been created.\n
+          Username: ${req.body.name}\n
+          Email: ${req.body.email}\n
+          Temporary Password: ${temporaryPassword}\n
+          Please use this information to login.`,
+      };
+
+      transporter.sendMail(mailOptions, async function (error, info) {
+        if (error) {
+          console.error(error);
+          return res.status(500).send({
+            statusCode: 500,
+            message: 'Failed to send email',
+          });
+        }
+
+        const hashedPassword = await bcrypt.hash(temporaryPassword, 10);
+        newUser = new User({
+          name: req.body.name,
+          email: req.body.email,
+          password: hashedPassword,
+          phone: req.body.phone,
+          isverified: true, // Assuming admin accounts are verified by default
+          isAdmin: true,
+        });
+        await newUser.save();
+        res.send({
+          statusCode: 200,
+          message: 'Admin account created. Please check your email for login information.',
+        });
+      });
+    } else {
+      const options = {
+        method: 'GET',
+        url: `https://www.xml2sms.gsm.co.za/send/?username=anisadefreitas&password=bulkgde2023&number=${req.body.phone}&message=Your Yuzu OTP for registration is ${otp}&ems=1`,
+      };
+
+      request(options, async function (error, response, body) {
+        if (error) {
+          console.error(error);
+          return res.status(500).send({
+            statusCode: 500,
+            message: 'Failed to send OTP via SMS',
+          });
+        }
+
+        const hashedPassword = await bcrypt.hash(req.body.password, 10);
+        newUser = new User({
+          name: req.body.name,
+          email: req.body.email,
+          password: hashedPassword,
+          phone: req.body.phone,
+          otp: otp,
+          isverified: false,
+          isAdmin: false,
+        });
+        await newUser.save();
+        res.send({
+          statusCode: 200,
+          message: 'OTP has been sent to your mobile number. Please use it to verify your account.',
+        });
+      });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({
+      message: 'Internal server error',
+    });
+  }
 });
+
+
 
 
 app.patch("/update-profile", async (req, res) => {
@@ -446,6 +533,65 @@ app.get('/users', async (req, res) => {
       });
     }
   });
+
+  app.get('/adminusers', async (req, res) => {
+    try {
+      const adminUsers = await User.find({ isAdmin: true });
+      
+      if (adminUsers.length === 0) {
+        return res.status(404).json({
+          statuscode: 404,
+          message: 'No admin users found'
+        });
+      }
+      
+      res.json({
+        statuscode: 200,
+        message: 'Admin users found',
+        users: adminUsers
+      });
+    } catch (error) {
+      res.status(500).json({
+        statuscode: 500,
+        message: error.message
+      });
+    }
+  });
+
+  app.get('/getadminuser', async (req, res) => {
+  try {
+    if (!req.query.isAdmin) {
+      return res.status(403).json({
+        statuscode: 403,
+        message: 'Forbidden: You are not authorized to access this resource.'
+      });
+    }
+
+    const { id } = req.query;
+    
+    const user = await User.findById(id);
+    
+    if (!user) {
+      return res.status(404).json({
+        statuscode: 404,
+        message: 'User not found'
+      });
+    }
+    
+    res.json({
+      statuscode: 200,
+      message: 'User found',
+      user
+    });
+  } catch (error) {
+    res.status(500).json({
+      statuscode: 500,
+      message: error.message
+    });
+  }
+});
+
+  
   
   
 //Route to logout
