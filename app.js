@@ -53,6 +53,7 @@ const userSchema = new mongoose.Schema({
     phone: String,
     address: String,
     otp: String,
+    userGroup: String,
     isverified: Boolean
 });
 
@@ -299,6 +300,7 @@ app.post('/register', async (req, res) => {
           phone: req.body.phone,
           isverified: true, // Assuming admin accounts are verified by default
           isAdmin: true,
+          userGroup: req.body.userGroup
         });
         await newUser.save();
         res.send({
