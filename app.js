@@ -9,6 +9,7 @@ const multer = require("multer");
 const swaggerUi = require("swagger-ui-express");
 const swaggerJsdoc = require("swagger-jsdoc");
 const cors = require("cors"); 
+const request = require('request');
 //const request = require('request');
 
 
@@ -209,6 +210,8 @@ app.post("/add-delivery-option", async (req, res) => {
 
 
 
+
+
 app.post('/register', async (req, res) => {
   try {
     const user = await User.findOne({ email: req.body.email });
@@ -227,15 +230,15 @@ app.post('/register', async (req, res) => {
     let newUser;
 
     if (req.body.isAdmin) {
-      const temporaryPassword = randomstring.generate({
+      let temporaryPassword = randomstring.generate({
         length: 8,
         charset: 'alphanumeric',
       });
     
       // Check if the password meets the requirements
-      const hasUppercase = /[A-Z]/.test(temporaryPassword);
-      const hasLowercase = /[a-z]/.test(temporaryPassword);
-      const hasNumber = /[0-9]/.test(temporaryPassword);
+      let hasUppercase = /[A-Z]/.test(temporaryPassword);
+      let hasLowercase = /[a-z]/.test(temporaryPassword);
+      let hasNumber = /[0-9]/.test(temporaryPassword);
     
       if (hasUppercase && hasLowercase && hasNumber) {
         // Password meets the requirements, assign it to newUser
@@ -245,21 +248,20 @@ app.post('/register', async (req, res) => {
       } else {
         // Regenerate the password until it meets the requirements
         while (!(hasUppercase && hasLowercase && hasNumber)) {
-          newUser = {
-            password: randomstring.generate({
-              length: 8,
-              charset: 'alphanumeric',
-            }),
-          };
+          temporaryPassword = randomstring.generate({
+            length: 8,
+            charset: 'alphanumeric',
+          });
     
-          const hasUppercase = /[A-Z]/.test(newUser.password);
-          const hasLowercase = /[a-z]/.test(newUser.password);
-          const hasNumber = /[0-9]/.test(newUser.password);
+          hasUppercase = /[A-Z]/.test(temporaryPassword);
+          hasLowercase = /[a-z]/.test(temporaryPassword);
+          hasNumber = /[0-9]/.test(temporaryPassword);
         }
-      }
-    
 
-      
+        newUser = {
+          password: temporaryPassword,
+        };
+      }
 
       const transporter = nodemailer.createTransport({
         host: 'smtp-relay.sendinblue.com',
@@ -270,7 +272,6 @@ app.post('/register', async (req, res) => {
           pass: 'HRzMT6a2jBtAPKxW',
         },
       });
-      
 
       const mailOptions = {
         from: 'tester@pulego.co.za',
@@ -300,8 +301,9 @@ app.post('/register', async (req, res) => {
           phone: req.body.phone,
           isverified: true, // Assuming admin accounts are verified by default
           isAdmin: true,
-          userGroup: req.body.userGroup
+          userGroup: req.body.userGroup,
         });
+
         await newUser.save();
         res.send({
           statusCode: 200,
@@ -333,6 +335,7 @@ app.post('/register', async (req, res) => {
           isverified: false,
           isAdmin: false,
         });
+
         await newUser.save();
         res.send({
           statusCode: 200,
