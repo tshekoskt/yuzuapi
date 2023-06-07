@@ -628,7 +628,6 @@ app.post("/login", async (req, res) => {
         statuscode: 200,
         message: "Login successful",
         token,
-        userGroup,
         userId: user._id,
       });
     } catch (error) {
@@ -638,6 +637,8 @@ app.post("/login", async (req, res) => {
       });
     }
   });
+
+ 
   
 
   app.get("/userss", async (req, res) => {
