@@ -796,6 +796,33 @@ app.get('/post-rental-item-public', async (req, res) => {
 });
 
 
+app.get('/available-rental-items', async (req, res) => {
+  try {
+    // Fetch the available rental items
+    const availableRentalItems = await RentalProduct.find({ available: true });
+
+    // Generate image URLs for each rental item
+    const rentalItemsWithImages = await Promise.all(
+      availableRentalItems.map(async (rentalItem) => {
+        const imageUrls = await Promise.all(
+          rentalItem.photos.map((photo) => {
+            const imageUrl = `http://144.126.196.146:3000/images/${photo}`;
+            return imageUrl;
+          })
+        );
+        return { ...rentalItem.toObject(), imageUrls };
+      })
+    );
+
+    res.status(200).send({ message: 'Available rental items retrieved successfully', rentalItems: rentalItemsWithImages });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({ message: 'Server error', error });
+  }
+});
+
+
+
 
   app.get("/rentals", async (req, res) => {
     try {
