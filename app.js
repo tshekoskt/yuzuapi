@@ -810,11 +810,11 @@ app.get('/available-rental-items', async (req, res) => {
             return imageUrl;
           })
         );
-        return { ...rentalItem.toObject(), imageUrls };
+        return { ...rentalItem, imageUrls };
       })
     );
 
-    res.status(200).send({ message: 'Available rental items retrieved successfully', rentalItems: rentalItemsWithImages });
+   //res.status(200).send({ message: 'Available rental items retrieved successfully', rentalItems: rentalItemsWithImages });
   } catch (error) {
     console.error(error);
     res.status(500).send({ message: 'Server error', error });
