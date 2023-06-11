@@ -810,7 +810,7 @@ app.get('/available-rental-items', async (req, res) => {
             return imageUrl;
           })
         );
-        return { ...rentalItem.toObject()};
+        return {rentalItem};
       })
     );
 
