@@ -116,6 +116,8 @@ const rentalProductSchema = new mongoose.Schema({
     model: String,
     status: String,
     address: String,
+    categories: String,
+    SubCategories: String,
     description: String,
     deliveryOption: String,
     price: String,
@@ -715,6 +717,8 @@ app.post("/post-rental-item-public", upload.array("photos", 5), async (req, res)
         description: req.body.description,
         year: req.body.year,
         address: req.body.address,
+        categories: req.body.categories,
+        SubCategories: req.body.SubCategories,
         price: req.body.price,
         status: req.body.status,
         deliveryOption: req.body.deliveryOption,
@@ -775,6 +779,7 @@ app.post("/post-rental-item-public", upload.array("photos", 5), async (req, res)
 
 
 const path = require('path');
+const { Stream } = require("stream");
 
 app.get('/post-rental-item-public', async (req, res) => {
   try {
