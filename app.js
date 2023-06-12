@@ -116,6 +116,7 @@ const rentalProductSchema = new mongoose.Schema({
     model: String,
     status: String,
     description: String,
+    deliveryOption: String,
     price: String,
     year: Number,
     available: Boolean,
@@ -714,7 +715,7 @@ app.post("/post-rental-item-public", upload.array("photos", 5), async (req, res)
         year: req.body.year,
         price: req.body.price,
         status: req.body.status,
-        deliveryoption: req.body.deliveryOption,
+        deliveryOption: req.body.deliveryOption,
         photos: req.files.map((file) => `${serverUrl}/uploads/${file.filename}`), // Add the file path to the image URL
         pictures: req.body.pictures,
         category: req.body.categoryId,
