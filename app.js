@@ -742,7 +742,7 @@ app.post("/post-rental-item-public", upload.array("photos", 5), async (req, res)
     try {
       const { itemId, available, status } = req.body;
   
-      if (!itemId || !available || !status) {
+      if (!itemId) {
         return res.status(400).send({ message: "itemId, available, and status fields are required" });
       }
   
