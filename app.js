@@ -85,6 +85,7 @@ const rentalItemSchema = new mongoose.Schema({
     make: String,
     model: String,
     description: String,
+    status: String,
     year: Number,
     available: Boolean,
     startdate: Date,
@@ -711,6 +712,8 @@ app.post("/post-rental-item-public", upload.array("photos", 5), async (req, res)
         description: req.body.description,
         year: req.body.year,
         price: req.body.price,
+        status: req.body.status,
+        deliveryoption: req.body.deliveryOption,
         photos: req.files.map((file) => `${serverUrl}/uploads/${file.filename}`), // Add the file path to the image URL
         pictures: req.body.pictures,
         category: req.body.categoryId,
@@ -737,16 +740,16 @@ app.post("/post-rental-item-public", upload.array("photos", 5), async (req, res)
 
   app.patch("/update-rental-item", async (req, res) => {
     try {
-      const { itemId, available } = req.body;
+      const { itemId, available, status } = req.body;
   
-      if (!itemId || !available) {
-        return res.status(400).send({ message: "itemId and available fields are required" });
+      if (!itemId || !available || !status) {
+        return res.status(400).send({ message: "itemId, available, and status fields are required" });
       }
   
       // Update the rental item in the database
       const updatedItem = await RentalProduct.findByIdAndUpdate(
         itemId,
-        { available },
+        { available, status },
         { new: true }
       );
   
@@ -763,6 +766,7 @@ app.post("/post-rental-item-public", upload.array("photos", 5), async (req, res)
       res.status(500).send({ message: "Server error", error: error.errors });
     }
   });
+  
   
 
 
