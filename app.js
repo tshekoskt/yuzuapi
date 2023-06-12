@@ -114,6 +114,7 @@ const rentalItemSchema = new mongoose.Schema({
 const rentalProductSchema = new mongoose.Schema({
     make: String,
     model: String,
+    status: String,
     description: String,
     price: String,
     year: Number,
@@ -742,7 +743,7 @@ app.post("/post-rental-item-public", upload.array("photos", 5), async (req, res)
     try {
       const { itemId, available, status } = req.body;
   
-      if (!itemId || !available || !status) {
+      if (!itemId) {
         return res.status(400).send({ message: "itemId, available, and status fields are required" });
       }
   
