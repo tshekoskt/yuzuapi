@@ -272,7 +272,7 @@ app.post('/register', async (req, res) => {
 
       const transporter = nodemailer.createTransport({
         host: 'smtp.gmail.com',
-        port: 587,
+        port: 465,
         secure: false, // or true if required
         auth: {
           user: 'yuzuxapp@gmail.com',
