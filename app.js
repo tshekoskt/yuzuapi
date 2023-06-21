@@ -271,17 +271,17 @@ app.post('/register', async (req, res) => {
       }
 
       const transporter = nodemailer.createTransport({
-        host: 'smtp-relay.sendinblue.com',
+        host: 'smtp.gmail.com',
         port: 587,
         secure: false, // or true if required
         auth: {
-          user: 'tester@pulego.co.za',
-          pass: 'HRzMT6a2jBtAPKxW',
+          user: 'yuzuxapp@gmail.com',
+          pass: 'Keeya62#',
         },
       });
 
       const mailOptions = {
-        from: 'tester@pulego.co.za',
+        from: 'yuzuxapp@gmail.com',
         to: req.body.email,
         subject: 'Admin Account Information',
         text: `Your admin account has been created.\n
