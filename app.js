@@ -276,7 +276,7 @@ app.post('/register', async (req, res) => {
         secure: false, // or true if required
         auth: {
           user: 'yuzuxapp@gmail.com',
-          pass: 'Keeya62#',
+          pass: 'Keeya6262#',
         },
       });
 
