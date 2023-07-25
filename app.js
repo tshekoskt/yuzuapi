@@ -123,6 +123,7 @@ const rentalProductSchema = new mongoose.Schema({
     price: String,
     year: Number,
     available: Boolean,
+    favorite: Boolean,
     startdate: Date,
     enddate: Date,
     photos: [String],
@@ -775,6 +776,65 @@ app.post("/post-rental-item-public", upload.array("photos", 5), async (req, res)
     }
   });
   
+
+  app.patch("/favoriteItem", async (req, res) => {
+    try {
+      const { itemId } = req.body;
+  
+      if (!itemId) {
+        return res.status(400).send({ message: "itemId is required" });
+      }
+  
+      // Update the rental item in the database
+      const updatedItem = await RentalProduct.findByIdAndUpdate(
+        itemId,
+        { favorite: true },
+        { new: true }
+      );
+  
+      if (!updatedItem) {
+        return res.status(404).send({ message: "Rental item not found" });
+      }
+  
+      res.status(200).send({
+        message: "Rental item updated successfully",
+        updatedItem,
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).send({ message: "Server error", error: error.errors });
+    }
+  });
+  
+
+  app.patch("/unfavoriteItem", async (req, res) => {
+    try {
+      const { itemId } = req.body;
+  
+      if (!itemId) {
+        return res.status(400).send({ message: "itemId is required" });
+      }
+  
+      // Update the rental item in the database
+      const updatedItem = await RentalProduct.findByIdAndUpdate(
+        itemId,
+        { favorite: false },
+        { new: true }
+      );
+  
+      if (!updatedItem) {
+        return res.status(404).send({ message: "Rental item not found" });
+      }
+  
+      res.status(200).send({
+        message: "Rental item updated successfully",
+        updatedItem,
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).send({ message: "Server error", error: error.errors });
+    }
+  });
   
 
 
@@ -813,6 +873,32 @@ app.get('/available-rental-items', async (req, res) => {
   try {
     // Fetch the available rental items
     const availableRentalItems = await RentalProduct.find({ available: true });
+
+    // Generate image URLs for each rental item
+    const rentalItemsWithImages = await Promise.all(
+      availableRentalItems.map(async (rentalItem) => {
+        const imageUrls = await Promise.all(
+          rentalItem.photos.map((photo) => {
+            const imageUrl = `http://144.126.196.146:3000/images/${photo}`;
+            return imageUrl;
+          })
+        );
+        return {rentalItem};
+      })
+    );
+
+    res.status(200).send({ message: 'Available rental items retrieved successfully', rentalItems: rentalItemsWithImages });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({ message: 'Server error', error });
+  }
+});
+
+
+app.get('/favorite-rental-items', async (req, res) => {
+  try {
+    // Fetch the available rental items
+    const availableRentalItems = await RentalProduct.find({ favorite: true , available: true });
 
     // Generate image URLs for each rental item
     const rentalItemsWithImages = await Promise.all(
