@@ -1,4 +1,6 @@
-const express = require("express");
+
+const express = require('express');
+const app = express();
 const bodyParser = require("body-parser");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
@@ -10,152 +12,13 @@ const swaggerUi = require("swagger-ui-express");
 const swaggerJsdoc = require("swagger-jsdoc");
 const cors = require("cors"); 
 const request = require('request');
+const RentalItem = require('./models/rentals');
+const RentalProduct = require('./models/rentalProducts');
 const userSchema = require('./models/user');
 
-//const request = require('request');
 
 
-const app = express();
-app.use(bodyParser.json());
-app.use("/uploads", express.static("uploads"));
-
-app.use(cors());
-const options = {
-    swaggerDefinition: {
-        openapi: "3.0.0",
-        info: {
-            title: "Yuzu Rental API",
-            version: "1.0.0",
-            description: "API for a Yuzu Rental System",
-        },
-        servers: [{
-            url: "http://localhost:3000/",
-        }, ],
-    },
-    apis: ["./app.js"],
-};
-
-const authController = require('./authController');
-app.use('/auth', authController);
-
-const rentalsController = require('./rentalsController');
-app.use('/rentals', rentalsController);
-
-const specs = swaggerJsdoc(options);
-
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
-
-// Connect to MongoDB user yuzuadmin and password yuzuadmin123
-mongoose.connect("mongodb+srv://yuzuadmin:yuzuadmin123@cluster0.twbmhw7.mongodb.net/yuzudb?retryWrites=true&w=majority", {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-});
-
-
-
-/* // Define Category Schema
-const categorySchema = new mongoose.Schema({
-    name: String,
-    description: String,
-    isactive: Boolean
-});
-
-// Define Delivery Option Schema
-const deliveryOptionsSchema = new mongoose.Schema({
-    name: String,
-    description: String,
-    isactive: Boolean
-});
-
-// Define RentalItem Schema
-const rentalItemSchema = new mongoose.Schema({
-    make: String,
-    model: String,
-    description: String,
-    status: String,
-    year: Number,
-    available: Boolean,
-    startdate: Date,
-    enddate: Date,
-    photos: [String],
-    pictures: [String],
-    category: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Category",
-    },
-    rentedBy: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-    },
-    postedBy: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-    },
-    deliveryoption: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "DeliveryOption"
-    }
-});
-
-// Define RentalItem Schema
-const rentalProductSchema = new mongoose.Schema({
-    make: String,
-    model: String,
-    status: String,
-    address: String,
-    categories: String,
-    SubCategories: String,
-    description: String,
-    deliveryOption: String,
-    price: String,
-    year: Number,
-    available: Boolean,
-    startdate: Date,
-    enddate: Date,
-    photos: [String],
-    pictures: [String],
-    category: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Category",
-    },
-    rentedBy: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-    },
-    postedBy: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-    },
-    deliveryoption: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "DeliveryOption"
-    }
-});
-
-// Define Review Schema
-const reviewSchema = new mongoose.Schema({
-    rating: Number,
-    text: String,
-    reviewer: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-    },
-    rentalItem: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "RentalItem",
-    },
-}); */
-
-// Compile Schema into Models
-//const User = mongoose.model('User', userSchema);
-//const RentalItem = mongoose.model("RentalItem", rentalItemSchema);
-/* const RentalProduct = mongoose.model("RentalProduct", rentalProductSchema);
-const Review = mongoose.model("Review", reviewSchema);
-const Category = mongoose.model("Category", categorySchema);
-const DeliveryOption = mongoose.model("DeliveryOption", deliveryOptionsSchema); */
-
-// Middleware to Verify JSON Web Token
-/* const verifyToken = (req, res, next) => {
+const verifyToken = (req, res, next) => {
     const bearerHeader = req.headers["authorization"];
     if (!bearerHeader) {
         return res.status(401).send("Access Denied");
@@ -449,7 +312,7 @@ app.get("/rental-item/:id", async (req, res) => {
     }
 });
 
-app.get("/available-rental-tems", verifyToken, async (req, res) => {
+app.get("/available-rental-items", verifyToken, async (req, res) => {
     try {
         const availableRentalItems = await RentalItem.find({
             available: true
@@ -486,8 +349,6 @@ app.post("/add-review", verifyToken, async (req, res) => {
     } catch (error) {
         res.status(400).send(error);
     }
-}); */
-
-app.listen(3000, () => {
-    console.log("Server started on port 3000");
 });
+
+module.exports = app;
