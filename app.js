@@ -1,4 +1,4 @@
-const express = require("express");
+const express = require('express');
 const bodyParser = require("body-parser");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
@@ -38,7 +38,7 @@ const specs = swaggerJsdoc(options);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
 
 // Connect to MongoDB user yuzuadmin and password yuzuadmin123
-mongoose.connect("mongodb+srv://theo:eCfsQcycmj1htNRP@cluster0.twbmhw7.mongodb.net/yuzudb?retryWrites=true&w=majority", {
+mongoose.connect("mongodb+srv://theo:Theo%401738@cluster0.twbmhw7.mongodb.net/yuzudb?retryWrites=true&w=majority", {
     useNewUrlParser: true,
     useUnifiedTopology: true,
 });
@@ -145,6 +145,20 @@ const rentalProductSchema = new mongoose.Schema({
         ref: "DeliveryOption"
     }
 });
+
+
+const chatSchema = new mongoose.Schema({
+  username: String,
+  message: String,
+  seen: Boolean,
+  oderByDate: Date,
+  postedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+  },
+});
+
+
 
 // Define Review Schema
 const reviewSchema = new mongoose.Schema({
@@ -1038,6 +1052,60 @@ app.get("/available-rental-tems", verifyToken, async (req, res) => {
         res.status(400).send(error);
     }
 });
+
+
+const Chat = mongoose.model('Chat', chatSchema);
+
+// POST endpoint to create a new chat message
+app.post('/chats', async (req, res) => {
+  try {
+    // Create a new chat message based on the request body
+    const newChat = new Chat({
+      username: req.body.username,
+      message: req.body.message,
+      seen: req.body.seen,
+      orderByDate: req.body.orderByDate,
+      postedBy: req.body.postedBy, // You should provide a valid user ObjectId here
+    });
+
+    // Save the chat message to the database
+    const savedChat = await newChat.save();
+    res.status(201).json(savedChat);
+  } catch (error) {
+    res.status(500).json({ error: 'An error occurred while saving the chat message.' });
+  }
+});
+
+// GET endpoint to retrieve all chat messages
+app.get('/chats', async (req, res) => {
+  try {
+    // Fetch all chat messages from the database
+    const chats = await Chat.find();
+    res.status(200).json(chats);
+  } catch (error) {
+    res.status(500).json({ error: 'An error occurred while fetching chat messages.' });
+  }
+});
+
+// GET endpoint to retrieve a chat message by ID
+app.get('/chats/:chatId', async (req, res) => {
+  try {
+    // Fetch a chat message by its ID from the database
+    const chat = await Chat.findById(req.params.chatId);
+    
+    if (!chat) {
+      return res.status(404).json({ error: 'Chat message not found.' });
+    }
+    
+    res.status(200).json(chat);
+  } catch (error) {
+    res.status(500).json({ error: 'An error occurred while fetching the chat message.' });
+  }
+});
+
+
+
+
 
 ///search?make=camera
 app.get("/search", async (req, res) => {
