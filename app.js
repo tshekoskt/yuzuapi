@@ -53,6 +53,8 @@ const userSchema = new mongoose.Schema({
     password: String,
     phone: String,
     address: String,
+    city : String,
+    province: String,
     otp: String,
     userGroup: String,
     isverified: Boolean

@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Socket.io Chat</title>
+    <style>
+  .card {
+    position: fixed;
+    top: 60px; /* Adjust the top position as needed */
+    right: 60px;
+    width: 300px;
+    height: 320px;
+    background-color: #343541;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+ /*   width: 260px;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);*/
+  }
+  
+  .chat-header {
+    background-color: #333;
+    color: #fff;
+    padding: 10px;
+    font-size: 18px;
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+  }
+  
+  .chat-window {
+    height: 220px;
+    overflow-y: scroll;
+  }
+  
+  .message-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  
+  .chat-input {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    border-top: 1px solid #ccc;
+  }
+  
+  .message-input {
+    flex: 1;
+    border: none;
+    outline: none;
+    padding: 5px;
+    font-size: 14px;
+  }
+  
+  .send-button {
+    border: none;
+    outline: none;
+    background-color: #333;
+    color: #ffffffad;
+    font-size: 14px;
+    padding: 5px 10px;
+    cursor: pointer;
+  }
+  
+  .send-button:hover {
+    background-color: rgb(255, 255, 255);
+    color: rgb(214, 35, 35);
+    box-shadow: 0 4px 18px 0 rgba(0, 0, 0, 0.25);
+  }
+
+  .ycontainer {
+    position: fixed;
+    top: 60px; /* Adjust the top position as needed */
+    right: 60px;
+    width: 300px;
+    height: 320px;
+    background-color: #343541;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  
+  
+  .yclose {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    cursor: pointer;
+  }
+  
+  
+        
+  ul {
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+            overflow: auto;
+            height: 200px;
+            border: 1px solid #4e2a2a;
+        }
+        
+        li {
+            margin: 2px 0;
+            padding: 2px;
+            background-color: #fafafaef;
+        }
+        
+  
+     
+    </style>
+    
+</head>
+
+<body>
+      <!--<div id="container">
+        <h2>YUZU Chat</h2>
+       <input id="username" type="text" placeholder="Username" />
+        <button onclick="registerUsername()">Register</button>
+        <p id="displayUsername"></p>
+        <ul id="messages"></ul>
+        <input id="privateUsername" type="text" placeholder="Private Username" style="display: none;" />
+        <input id="message" type="text" autocomplete="off" placeholder="Message" />
+        <button onclick="sendMessage()">Send</button> -->
+
+
+<!--         <h4>Group Chat (By Product Number)</h4>
+        <input id="productNumber" type="text" placeholder="Product Number" />
+        <input id="groupMessage" type="text" autocomplete="off" placeholder="Group Message" />
+        <button onclick="sendGroupMessage()">Send to Group</button> 
+    </div>-->
+
+    <div id="ycontainer">
+        <h2>YUZU Chat</h2>
+      <div class="card">
+        <div class="chat-header">
+            <p id="displayUsername" ></p>
+        </div>
+
+          <div class="chat-window">
+            
+            <ul id="messages" class="chat-header"></ul>
+            
+            <input  id="privateUsername" type="text" placeholder="Private Username" style="display: none;" />
+            <!--<input id="message" type="text" autocomplete="off" placeholder="Message" /> -->
+        </div>
+          <div class="chat-input">
+              <input  id="message" type="text" class="message-input"  placeholder="Type your message here">
+              <button class="send-button" onclick="sendMessage()" >Send </button>
+          </div>
+       </div>
+    </div>
+    
+    
+    </body>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script>
+        var socket = io();
+        var currentUsername = null;
+        var usernames = {};
+
+        function registerUsername() {
+            currentUsername = $('#username').val();
+            
+            if (currentUsername) {
+                socket.emit('register', currentUsername);
+                $('#displayUsername').text('Logged in as: ' + currentUsername);
+                //alert('Registered as ' + currentUsername);
+            }
+        }
+
+     
+ function sendMessage() {
+    var message = $('#message').val();
+    var privateUsername = $('#privateUsername').val();
+    
+    var payload = {
+        "username": currentUsername, // Assuming currentUsername holds the username of the sender
+        "message": message,
+        "seen": false,
+        "orderByDate": new Date().toISOString() // Sending the current date and time
+    };
+    
+    // Call the API before sending the message
+    $.ajax({
+        type: "POST",
+        url: "http://localhost:3000/chats",
+        data: JSON.stringify(payload),
+        contentType: "application/json; charset=utf-8",
+        dataType: "json",
+        success: function(data) {
+            // When API call is successful, send the message
+            if (privateUsername) {
+                $('#messages').append($('<li>').text(`Me: ${message}`));
+                socket.emit('private message', { to: privateUsername, message: message });
+            } else {
+                socket.emit('chat message', message);
+            }
+            $('#message').val('');
+        },
+        error: function(err) {
+            console.error('Error calling the API', err);
+            // Optionally, handle the error, e.g., display an error message to the user
+        }
+    });
+}
+
+
+        function sendGroupMessage() {
+            var message = $('#groupMessage').val();
+            var productNumber = $('#productNumber').val();
+            if (productNumber && message) {
+                socket.emit('group message', { productNumber: productNumber, message: message });
+                $('#groupMessage').val('');
+            }
+        }
+
+        socket.on('register', (username, callback) => {
+            usernames[socket.id] = username;
+        });
+
+        socket.on('chat message', function(msg) {
+            $('#messages').append($('<li>').text(msg));
+        });
+
+        socket.on('group message', function(data) {
+            $('#messages').append($('<li>').text(`Group ${data.productNumber}: ${data.message}`));
+        });
+
+        socket.on('private message', function(data) {
+            
+            $('#messages').append($('<li>').text(`From ${data.from}: ${data.message}`));
+        });
+    </script>
+        <script>
+            $(document).ready(function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const usernameFromUrl = urlParams.get('username');
+        const recipientFromUrl = urlParams.get('recipient');
+        
+        if (usernameFromUrl) {
+            $('#username').val(usernameFromUrl); // Prepopulate the username input field
+            $('#privateUsername').val(recipientFromUrl); // Prepopulate the username input field
+            
+            currentUsername = usernameFromUrl; // Set the currentUsername variable
+            socket.emit('register', usernameFromUrl); // Register the username with the server again
+            $('#displayUsername').text('Logged in as: ' + usernameFromUrl); // Display username
+
+        }
+    });
+    
+        </script>
+</body>
+
+</html>
