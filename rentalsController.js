@@ -207,7 +207,45 @@ app.get('/available-rental-items', async (req, res) => {
 });
 
 
+/**
+ * creating new rental item
+ */
+//verifyToken,
+app.post("/rental",  async(req,res)=> {
+  try{
+    const rental = new Rental({
+      returned: req.body.returned,
+      cancelled: req.body.cancelled,
+      notes: req.body.notes,
+      startdate: req.body.startDate,
+      enddate: req.body.endDate,
+      duration:req.body.duration,
+      amount:req.body.amount,
+      deliveryoption:req.body.deliveryOption,
+      deliveryamount:req.body.deliveryAmount,
+      createddate:req.body.createdDate,
+      modifieddate:req.body.modifiedDate,
+      totalamount:req.body.totalAmount,
+      productId:req.body.productId,
+      createdBy: req.body.createdBy,
+      modifiedBy: req.body.modifiedBy  
+    });
+    await rental.save();
 
+    res.status(201).send({
+      message: "Rental item posted successfully",
+      rental      
+    });
+  } catch (error) {
+    console.error(error);
+    if (error instanceof mongoose.Error.ValidationError) {
+      res.status(400).send({ message: "Validation error", errors: error.errors });
+    } else {
+      res.status(500).send({ message: "Server error", error: error.errors });
+      console.log("error message", error);
+    }
+  }
+})
 
 app.get("/rentals", async (req, res) => {
   try {
