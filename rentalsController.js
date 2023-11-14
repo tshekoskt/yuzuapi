@@ -120,20 +120,20 @@ app.post("/post-rental-item-public", upload.array("photos", 5), async (req, res)
 
 app.patch("/update-rental-item", async (req, res) => {
   try {
-    const { itemId, available, status } = req.body;
+    const { itemId, available, status, make, model, description, address, price ,photos} = req.body;
 
     if (!itemId) {
-      return res.status(400).send({ message: "itemId, available, and status fields are required" });
+      return res.status(400).send({ message: "itemId field is required" });
     }
 
     // Update the rental item in the database
     const updatedItem = await RentalProduct.findByIdAndUpdate(
       itemId,
-      { available, status },
+      {available, status, make, model, description, address, price , photos},
       { new: true }
     );
 
-    if (!updatedItem) {
+    if (!updatedItem) { 
       return res.status(404).send({ message: "Rental item not found" });
     }
 
@@ -153,7 +153,7 @@ app.patch("/update-rental-item", async (req, res) => {
 const path = require('path');
 const { Stream } = require("stream");
 
-app.get('/post-rental-item-public', async (req, res) => {
+app.get('/get-rental-item-public', async (req, res) => {
   try {
     const userId = req.query.userId;
 
@@ -206,6 +206,26 @@ app.get('/available-rental-items', async (req, res) => {
   }
 });
 
+app.delete('/delete-rental-item/:itemId', async (req, res) => {
+  try {
+    const itemId = req.params.itemId;
+
+    // Check if the rental item exists
+    const rentalItem = await RentalProduct.findById(itemId);
+
+    if (!rentalItem) {
+      return res.status(404).send({ message: 'Rental item not found' });
+    }
+
+    // Delete the rental item
+    await rentalItem.remove();
+
+    res.status(200).send({ message: 'Rental item deleted successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({ message: 'Server error', error });
+  }
+});
 
 /**
  * creating new rental item
@@ -416,7 +436,31 @@ app.get("/rentedItems", async (req, res) => {
   }
 });
 
+app.get("/myRentedItems", async (req, res) => {
+  try {
+    const { userId } = req.query;
 
+    if (!userId) {
+      
+      return res.status(400).send({ message: "userId is required as a query parameter" });
+    }
+
+    // Find rental items with isRented set to true and matching userId
+    const rentedItems = await RentalProduct.find({ postedBy:userId });
+
+    if (rentedItems.length === 0) {
+      return res.status(404).send({ message: "No rented items found for the specified user" });
+    }
+
+    res.status(200).send({
+      message: "Rented items retrieved successfully",
+      rentedItems,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({ message: "Server error", error: error.errors });
+  }
+});
 
 app.patch("/returnItem", async (req, res) => {
   try {
