@@ -38,7 +38,7 @@ const specs = swaggerJsdoc(options);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
 
 // Connect to MongoDB user yuzuadmin and password yuzuadmin123
-mongoose.connect("mongodb+srv://theo:Theo%401738@cluster0.twbmhw7.mongodb.net/yuzudb?retryWrites=true&w=majority", {
+mongoose.connect("mongodb+srv://yuzuadmin:yuzuadmin123@cluster0.twbmhw7.mongodb.net/yuzudb?retryWrites=true&w=majority", {
     useNewUrlParser: true,
     useUnifiedTopology: true,
 });
@@ -176,9 +176,46 @@ const reviewSchema = new mongoose.Schema({
     },
 });
 
+/**
+ * Rental Schema definition
+ */
+const rentalSchema = new mongoose.Schema({
+  returned: Boolean,
+  cancelled: Boolean,
+  notes: String,
+  startdate: Date,
+  enddate: Date,
+  duration:Number,
+  amount:String,
+  deliveryoption:String,
+  deliveryamount:String,
+  createddate:Date,
+  modifieddate:Date,
+  totalamount:String,
+  ordernumber:String,
+  productId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "RentalProduct",
+  },
+  createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+  },
+  modifiedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+  }
+  /*,
+  deliveryoption: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "DeliveryOption"
+  }*/
+});
+
 // Compile Schema into Models
 const User = mongoose.model("User", userSchema);
 const RentalItem = mongoose.model("RentalItem", rentalItemSchema);
+const Rental = mongoose.model("Rental", rentalSchema);
 const RentalProduct = mongoose.model("RentalProduct", rentalProductSchema);
 const Review = mongoose.model("Review", reviewSchema);
 const Category = mongoose.model("Category", categorySchema);
@@ -494,9 +531,6 @@ app.post("/forgot-password", async (req, res) => {
         });
     }
 });
-
-
-
   
 //Route to reseting user password
 app.post("/reset-password", async (req, res) => {
@@ -856,6 +890,7 @@ app.post("/post-rental-item-public", upload.array("photos", 5), async (req, res)
 
 const path = require('path');
 const { Stream } = require("stream");
+const { response } = require('./rentalsController');
 
 app.get('/post-rental-item-public', async (req, res) => {
   try {
@@ -1106,6 +1141,56 @@ app.get('/chats/:chatId', async (req, res) => {
 });
 
 
+const Chat = mongoose.model('Chat', chatSchema);
+
+// POST endpoint to create a new chat message
+app.post('/chats', async (req, res) => {
+  try {
+    // Create a new chat message based on the request body
+    const newChat = new Chat({
+      username: req.body.username,
+      message: req.body.message,
+      seen: req.body.seen,
+      orderByDate: req.body.orderByDate,
+      postedBy: req.body.postedBy, // You should provide a valid user ObjectId here
+    });
+
+    // Save the chat message to the database
+    const savedChat = await newChat.save();
+    res.status(201).json(savedChat);
+  } catch (error) {
+    res.status(500).json({ error: 'An error occurred while saving the chat message.' });
+  }
+});
+
+// GET endpoint to retrieve all chat messages
+app.get('/chats', async (req, res) => {
+  try {
+    // Fetch all chat messages from the database
+    const chats = await Chat.find();
+    res.status(200).json(chats);
+  } catch (error) {
+    res.status(500).json({ error: 'An error occurred while fetching chat messages.' });
+  }
+});
+
+// GET endpoint to retrieve a chat message by ID
+app.get('/chats/:chatId', async (req, res) => {
+  try {
+    // Fetch a chat message by its ID from the database
+    const chat = await Chat.findById(req.params.chatId);
+    
+    if (!chat) {
+      return res.status(404).json({ error: 'Chat message not found.' });
+    }
+    
+    res.status(200).json(chat);
+  } catch (error) {
+    res.status(500).json({ error: 'An error occurred while fetching the chat message.' });
+  }
+});
+
+
 
 
 
@@ -1119,7 +1204,6 @@ app.get("/search", async (req, res) => {
         res.status(400).send(error);
     }
 });
-
 
 // Route to Add a Review
 app.post("/add-review", verifyToken, async (req, res) => {

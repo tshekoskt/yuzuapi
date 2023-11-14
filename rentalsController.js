@@ -1,0 +1,450 @@
+
+const express = require('express');
+const app = express();
+const bodyParser = require("body-parser");
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcrypt");
+const nodemailer = require("nodemailer");
+const randomstring = require("randomstring");
+const mongoose = require("mongoose");
+const multer = require("multer");
+const swaggerUi = require("swagger-ui-express");
+const swaggerJsdoc = require("swagger-jsdoc");
+const cors = require("cors");
+const request = require('request');
+const RentalItem = require('./models/rentals');
+const RentalProduct = require('./models/rentalProducts');
+const userSchema = require('./models/user');
+
+
+
+const verifyToken = (req, res, next) => {
+  const bearerHeader = req.headers["authorization"];
+  if (!bearerHeader) {
+    return res.status(401).send("Access Denied");
+  }
+  const bearer = bearerHeader.split(" ");
+  const bearerToken = bearer[1];
+  req.token = bearerToken;
+  jwt.verify(req.token, "secretkey", (error, data) => {
+    if (error) {
+      return res.status(401).send("Invalid Token");
+    }
+    req.userId = data.userId;
+    next();
+  });
+};
+
+//Look ups
+app.post("/add-category", async (req, res) => {
+  try {
+    const category = new Category({
+      name: req.body.name,
+      description: req.body.description,
+      isactive: true
+    });
+    await category.save();
+    res.send("Category added successfully");
+  } catch (error) {
+    res.status(400).send(error);
+  }
+});
+
+app.post("/add-delivery-option", async (req, res) => {
+  try {
+    const deliveryoption = new DeliveryOption({
+      name: req.body.name,
+      description: req.body.description,
+      isactive: true
+    });
+    await deliveryoption.save();
+    res.send("Delivery option added successfully");
+  } catch (error) {
+    res.status(400).send(error);
+  }
+});
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "uploads");
+  },
+  filename: (req, file, cb) => {
+    cb(null, `${Date.now()}-${file.originalname}`);
+  },
+});
+
+const upload = multer({
+  storage
+});
+
+const serverUrl = "http://144.126.196.146:3000"; // Replace with your server's URL
+
+app.post("/post-rental-item-public", upload.array("photos", 5), async (req, res) => {
+  try {
+    const rentalProduct = new RentalProduct({
+      make: req.body.make,
+      model: req.body.model,
+      description: req.body.description,
+      year: req.body.year,
+      address: req.body.address,
+      categories: req.body.categories,
+      SubCategories: req.body.SubCategories,
+      price: req.body.price,
+      status: req.body.status,
+      deliveryOption: req.body.deliveryOption,
+      photos: req.files.map((file) => `${serverUrl}/uploads/${file.filename}`), // Add the file path to the image URL
+      pictures: req.body.pictures,
+      category: req.body.categoryId,
+      postedBy: req.body.postedBy,
+      available: false,
+
+
+    });
+    await rentalProduct.save();
+
+    res.status(201).send({
+      message: "Rental item posted successfully",
+      rentalProduct,
+      imageUrls: req.files.map((file) => `${serverUrl}/uploads/${file.filename}`), // Add the file path to the image URL
+    });
+  } catch (error) {
+    console.error(error);
+    if (error instanceof mongoose.Error.ValidationError) {
+      res.status(400).send({ message: "Validation error", errors: error.errors });
+    } else {
+      res.status(500).send({ message: "Server error", error: error.errors });
+      console.log("error message", error);
+    }
+  }
+});
+
+app.patch("/update-rental-item", async (req, res) => {
+  try {
+    const { itemId, available, status } = req.body;
+
+    if (!itemId) {
+      return res.status(400).send({ message: "itemId, available, and status fields are required" });
+    }
+
+    // Update the rental item in the database
+    const updatedItem = await RentalProduct.findByIdAndUpdate(
+      itemId,
+      { available, status },
+      { new: true }
+    );
+
+    if (!updatedItem) {
+      return res.status(404).send({ message: "Rental item not found" });
+    }
+
+    res.status(200).send({
+      message: "Rental item updated successfully",
+      updatedItem,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({ message: "Server error", error: error.errors });
+  }
+});
+
+
+
+
+const path = require('path');
+const { Stream } = require("stream");
+
+app.get('/post-rental-item-public', async (req, res) => {
+  try {
+    const userId = req.query.userId;
+
+    // Fetch the rental items by user ID or perform any other necessary operations
+    const rentalItems = await RentalProduct.find({ postedBy: userId });
+
+    // Generate image URLs for each rental item
+    const rentalItemsWithImages = await Promise.all(
+      rentalItems.map(async (rentalItem) => {
+        const imageUrls = await Promise.all(
+          rentalItem.photos.map((photo) => {
+            const imageUrl = `http://144.126.196.146:3000/images/${photo}`;
+            return imageUrl;
+          })
+        );
+        return { ...rentalItem.toObject(), imageUrls };
+      })
+    );
+
+    res.status(200).send({ message: 'Rental items retrieved successfully', rentalItems: rentalItemsWithImages });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({ message: 'Server error', error });
+  }
+});
+
+
+app.get('/available-rental-items', async (req, res) => {
+  try {
+    // Fetch the available rental items
+    const availableRentalItems = await RentalProduct.find({ available: true });
+
+    // Generate image URLs for each rental item
+    const rentalItemsWithImages = await Promise.all(
+      availableRentalItems.map(async (rentalItem) => {
+        const imageUrls = await Promise.all(
+          rentalItem.photos.map((photo) => {
+            const imageUrl = `http://144.126.196.146:3000/images/${photo}`;
+            return imageUrl;
+          })
+        );
+        return { rentalItem };
+      })
+    );
+
+    res.status(200).send({ message: 'Available rental items retrieved successfully', rentalItems: rentalItemsWithImages });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({ message: 'Server error', error });
+  }
+});
+
+
+/**
+ * creating new rental item
+ */
+//verifyToken,
+app.post("/rental",  async(req,res)=> {
+  try{
+    const rental = new Rental({
+      returned: req.body.returned,
+      cancelled: req.body.cancelled,
+      notes: req.body.notes,
+      startdate: req.body.startDate,
+      enddate: req.body.endDate,
+      duration:req.body.duration,
+      amount:req.body.amount,
+      deliveryoption:req.body.deliveryOption,
+      deliveryamount:req.body.deliveryAmount,
+      createddate:req.body.createdDate,
+      modifieddate:req.body.modifiedDate,
+      totalamount:req.body.totalAmount,
+      productId:req.body.productId,
+      createdBy: req.body.createdBy,
+      modifiedBy: req.body.modifiedBy  
+    });
+    await rental.save();
+
+    res.status(201).send({
+      message: "Rental item posted successfully",
+      rental      
+    });
+  } catch (error) {
+    console.error(error);
+    if (error instanceof mongoose.Error.ValidationError) {
+      res.status(400).send({ message: "Validation error", errors: error.errors });
+    } else {
+      res.status(500).send({ message: "Server error", error: error.errors });
+      console.log("error message", error);
+    }
+  }
+})
+
+app.get("/rentals", async (req, res) => {
+  try {
+    // Add your logic here to fetch all rental items or perform any other operations
+
+    // Example response
+    const rentalItems = await RentalProduct.find();
+    res.status(200).send({ message: "All rental items retrieved successfully", rentalItems });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({ message: "Server error", error });
+  }
+});
+
+
+
+
+
+// Route to Rent an Item
+app.post("/rent-item", verifyToken, async (req, res) => {
+  try {
+    const rentedItem = await RentalItem.findOne({
+      _id: req.body.rentedItemId
+    });
+    if (!rentedItem) {
+      return res.status(400).send("Item not found");
+    }
+    if (!rentedItem.available) {
+      return res.status(400).send("Item is not available");
+    }
+
+    //make a call to payment gateway
+
+    rentedItem.available = false;
+    rentedItem.rentedBy = req.userId;
+    await rentedItem.save();
+    res.send("Item rented successfully");
+  } catch (error) {
+    res.status(400).send(error);
+  }
+});
+
+app.get("/related-rental-item/:id", async (req, res) => {
+  try {
+    const rentalItem = await RentalItem.findById(req.params.id);
+    if (!rentalItem) {
+      return res.status(400).send("Rental item not found");
+    }
+    const relatedRentalItems = await RentalItem.find({
+      make: rentalItem.make,
+      model: rentalItem.model,
+      available: true
+    }).limit(5);
+    res.send(relatedRentalItems);
+  } catch (error) {
+    res.status(400).send(error);
+  }
+});
+
+//Get the rental item and the person who rented if available
+app.get("/categories", verifyToken, async (req, res) => {
+  try {
+    const categories = await Category.find({
+      available: true
+    });
+    res.send(categories);
+  } catch (error) {
+    res.status(400).send(error);
+  }
+});
+
+//look ups
+app.get("/categories", verifyToken, async (req, res) => {
+  try {
+    const categories = await Category.find({
+      available: true
+    });
+    res.send(categories);
+  } catch (error) {
+    res.status(400).send(error);
+  }
+});
+
+
+app.get("/deliveryoptions", verifyToken, async (req, res) => {
+  try {
+    const deliveryOptions = await DeliveryOption.find({
+      available: true
+    });
+    res.send(deliveryOptions);
+  } catch (error) {
+    res.status(400).send(error);
+  }
+});
+
+
+//Get the rental item and the person who rented if available
+app.get("/rental-item/:id", async (req, res) => {
+  try {
+    const rentalItem = await RentalItem.findById(req.params.id).populate("rentedBy");
+    res.send(rentalItem);
+  } catch (error) {
+    res.status(400).send(error);
+  }
+});
+
+app.get("/available-rental-items", verifyToken, async (req, res) => {
+  try {
+    const availableRentalItems = await RentalItem.find({
+      available: true
+    });
+    res.send(availableRentalItems);
+  } catch (error) {
+    res.status(400).send(error);
+  }
+});
+
+///search?make=camera
+app.get("/search", async (req, res) => {
+  try {
+    const search = req.query;
+    const rentalItems = await RentalItem.find(search).limit(5);
+    res.send(rentalItems);
+  } catch (error) {
+    res.status(400).send(error);
+  }
+});
+
+
+// Route to Add a Review
+app.post("/add-review", verifyToken, async (req, res) => {
+  try {
+    const review = new Review({
+      rating: req.body.rating,
+      text: req.body.text,
+      reviewer: req.userId,
+      rentedItem: req.body.rentedItemId,
+    });
+    await review.save();
+    res.send("Review added successfully");
+  } catch (error) {
+    res.status(400).send(error);
+  }
+});
+
+app.get("/rentedItems", async (req, res) => {
+  try {
+    const { userId } = req.query;
+
+    if (!userId) {
+      return res.status(400).send({ message: "userId is required as a query parameter" });
+    }
+
+    // Find rental items with isRented set to true and matching userId
+    const rentedItems = await RentalProduct.find({ isRented: true, userId });
+
+    if (rentedItems.length === 0) {
+      return res.status(404).send({ message: "No rented items found for the specified user" });
+    }
+
+    res.status(200).send({
+      message: "Rented items retrieved successfully",
+      rentedItems,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({ message: "Server error", error: error.errors });
+  }
+});
+
+
+
+app.patch("/returnItem", async (req, res) => {
+  try {
+    const { itemId } = req.body;
+
+    if (!itemId) {
+      return res.status(400).send({ message: "itemId is required" });
+    }
+
+    // Update the rental item in the database to set isRented to false
+    const updatedItem = await RentalProduct.findByIdAndUpdate(
+      itemId,
+      { isRented: false },
+      { new: true }
+    );
+
+    if (!updatedItem) {
+      return res.status(404).send({ message: "Rental item not found" });
+    }
+
+    res.status(200).send({
+      message: "Rental item returned successfully",
+      updatedItem,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({ message: "Server error", error: error.errors });
+  }
+});
+
+module.exports = app;
