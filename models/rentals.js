@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-/*const rentalItemSchema = new mongoose.Schema({
+const rentalItemSchema = new mongoose.Schema({
     make: String,
     model: String,
     description: String,
@@ -27,7 +27,8 @@ const mongoose = require('mongoose');
         type: mongoose.Schema.Types.ObjectId,
         ref: "DeliveryOption"
     }
-});*/
+});
+/*
 const rentalItemSchema = new mongoose.Schema({
     returned: Boolean,
     cancelled: Boolean,
@@ -54,12 +55,12 @@ const rentalItemSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
     }
-    /*deliveryoption: {
+    deliveryoption: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "DeliveryOption"
-    }*/
+    }
 }, {
     strict: false
   }
-  );
-module.exports = mongoose.model('RentalItem', rentalItemSchema);
+  );*/
+module.exports = mongoose.model('RentalItem1', rentalItemSchema);

@@ -491,4 +491,170 @@ app.patch("/returnItem", async (req, res) => {
   }
 });
 
+//UPDATES : JM//
+/****************************
+ * RENTALS
+ ****************************/
+
+/**
+ * creating new rental item
+ */
+//verifyToken,
+app.post("/rental",  async(req,res)=> {
+  console.log("request.body :", req.body);
+  try{
+
+    //
+    const rental = new Rental({
+      returned: req.body.returned,
+      cancelled: req.body.cancelled,
+      notes: req.body.notes,
+      startdate: req.body.startDate,
+      enddate: req.body.endDate,
+      duration:req.body.duration,
+      amount:req.body.amount,
+      eliveryoption:req.body.deliveryOption,
+      deliveryamount:req.body.deliveryAmount,
+      createddate:req.body.createdDate,
+      modifieddate:req.body.modifiedDate,
+      totalamount:req.body.totalAmount,
+      productId:req.body.productId,
+      createdBy: req.body.createdBy,
+      modifiedBy: req.body.modifiedBy  
+    });
+    await rental.save();
+
+    res.status(201).send({
+      message: "Rental item posted successfully",
+      rental      
+    });
+  } catch (error) {
+    console.error(error);
+    if (error instanceof mongoose.Error.ValidationError) {
+      res.status(400).send({ message: "Validation error", errors: error.errors });
+    } else {
+      res.status(500).send({ message: "Server error", error: error.errors });
+      console.log("error message", error);
+    }
+  }
+});
+
+/**
+ * Get rental by id
+ */
+app.get("/rental/:id", async (req, res) => {
+  try {
+      const rentalItem = await Rental.findById(req.params.id);
+      if (!rentalItem) {
+          return res.status(400).send("Rental item not found");
+      }
+     
+      res.send(rentalItem);
+  } catch (error) {
+    console.error(error);
+    if (error instanceof mongoose.Error.ValidationError) {
+      res.status(400).send({ message: "Validation error", errors: error.errors });
+    } else {
+      res.status(500).send({ message: "Server error", error: error.errors });
+      console.log("error message", error);
+    }
+  }
+});
+
+/**
+ * Update: cancel rental
+ */
+app.post("/rental/cancel", async (req,res)=>{
+  try{
+    const rentalItem = await Rental.findByIdAndUpdate(
+      {_id:req.body.id},
+      {
+        cancelled:req.body.cancelled,
+        notes:req.body.notes
+      });
+
+      console.log("rental cancel response", rentalItem);
+      return res.status(200).send({message: "success"});
+      
+  }catch(error){
+    console.error(error);
+    if (error instanceof mongoose.Error.ValidationError) {
+      res.status(400).send({ message: "Validation error", errors: error.errors });
+    } else {
+      res.status(500).send({ message: "Server error", error: error.errors });
+      console.log("error message", error);
+    }
+  }
+});
+
+/**
+ * Update: return rental
+ */
+app.post("/rental/return", async (req,res)=>{
+  try{
+    const rentalItem = await Rental.findByIdAndUpdate(
+      {_id:req.body.id},
+      {
+        returned:req.body.returned,
+        notes:req.body.notes
+      });
+
+      console.log("rental return response", rentalItem);
+      return res.status(200).send({message: "success"});
+  }catch(error){
+    console.error(error);
+    if (error instanceof mongoose.Error.ValidationError) {
+      res.status(400).send({ message: "Validation error", errors: error.errors });
+    } else {
+      res.status(500).send({ message: "Server error", error: error.errors });
+      console.log("error message", error);
+    }
+  }
+});
+
+/**
+ * Get Rentals by userId
+ */
+app.get("/rental/getByUserId/:id", async (req, res) => {
+  try {
+      const rentalItem = await Rental.find({"createdBy": req.params.id});
+      if (!rentalItem) {
+          return res.status(400).send("Rental(S) item not found");
+      }
+     
+      res.send(rentalItem);
+  } catch (error) {
+    console.error(error);
+    if (error instanceof mongoose.Error.ValidationError) {
+      res.status(400).send({ message: "Validation error", errors: error.errors });
+    } else {
+      res.status(500).send({ message: "Server error", error: error.errors });
+      console.log("error message", error);
+    }
+  }
+});
+
+/*****************************************
+ * PRODUCTS
+ *****************************************/
+app.get("/product/getById/:id", async (req, res) => {
+  try {
+    console.log("product id",req.params.id);
+    const rentalProduct = await RentalProduct.findById({_id:req.params.id});
+      if (!rentalProduct) {
+          return res.status(400).send("Product item not found");
+      }
+     
+      res.send(rentalProduct);
+  } catch (error) {
+    console.error(error);
+    if (error instanceof mongoose.Error.ValidationError) {
+      res.status(400).send({ message: "Validation error", errors: error.errors });
+    } else {
+      res.status(500).send({ message: "Server error", error: error.errors });
+      console.log("error message", error);
+    }
+  }
+});
+
 module.exports = app;
