@@ -10,12 +10,14 @@ const swaggerUi = require("swagger-ui-express");
 const swaggerJsdoc = require("swagger-jsdoc");
 const cors = require("cors");
 const request = require('request');
+const rental = require('./rentalsController');
 //const request = require('request');
 
-
+//https://www.geeksforgeeks.org/how-to-separate-routers-and-controllers-in-node-js/
 const app = express();
 app.use(bodyParser.json());
 app.use("/uploads", express.static("uploads"));
+app.use(rental);
 
 app.use(cors());
 const options = {

@@ -12,7 +12,9 @@ const swaggerUi = require("swagger-ui-express");
 const swaggerJsdoc = require("swagger-jsdoc");
 const cors = require("cors");
 const request = require('request');
+//const models = require('./models');
 const RentalItem = require('./models/rentals');
+const Rental = require('./models/rental');
 const RentalProduct = require('./models/rentalProducts');
 const userSchema = require('./models/user');
 
@@ -227,45 +229,6 @@ app.delete('/delete-rental-item/:itemId', async (req, res) => {
   }
 });
 
-/**
- * creating new rental item
- */
-//verifyToken,
-app.post("/rental",  async(req,res)=> {
-  try{
-    const rental = new Rental({
-      returned: req.body.returned,
-      cancelled: req.body.cancelled,
-      notes: req.body.notes,
-      startdate: req.body.startDate,
-      enddate: req.body.endDate,
-      duration:req.body.duration,
-      amount:req.body.amount,
-      deliveryoption:req.body.deliveryOption,
-      deliveryamount:req.body.deliveryAmount,
-      createddate:req.body.createdDate,
-      modifieddate:req.body.modifiedDate,
-      totalamount:req.body.totalAmount,
-      productId:req.body.productId,
-      createdBy: req.body.createdBy,
-      modifiedBy: req.body.modifiedBy  
-    });
-    await rental.save();
-
-    res.status(201).send({
-      message: "Rental item posted successfully",
-      rental      
-    });
-  } catch (error) {
-    console.error(error);
-    if (error instanceof mongoose.Error.ValidationError) {
-      res.status(400).send({ message: "Validation error", errors: error.errors });
-    } else {
-      res.status(500).send({ message: "Server error", error: error.errors });
-      console.log("error message", error);
-    }
-  }
-})
 
 app.get("/rentals", async (req, res) => {
   try {
@@ -501,7 +464,7 @@ app.patch("/returnItem", async (req, res) => {
  */
 //verifyToken,
 app.post("/rental",  async(req,res)=> {
-  console.log("request.body :", req.body);
+  console.log("rental request.body :", req.body);
   try{
 
     //
@@ -513,7 +476,7 @@ app.post("/rental",  async(req,res)=> {
       enddate: req.body.endDate,
       duration:req.body.duration,
       amount:req.body.amount,
-      eliveryoption:req.body.deliveryOption,
+      deliveryoption:req.body.deliveryOption,
       deliveryamount:req.body.deliveryAmount,
       createddate:req.body.createdDate,
       modifieddate:req.body.modifiedDate,
@@ -544,7 +507,11 @@ app.post("/rental",  async(req,res)=> {
  */
 app.get("/rental/:id", async (req, res) => {
   try {
-      const rentalItem = await Rental.findById(req.params.id);
+    
+    //const id = mongoose.Types.ObjectId(req.params.id);
+    const id = req.params.id;
+    console.log("req.params.id : ", id);
+      const rentalItem = await Rental.findById(id);//.findById(req.params.id);
       if (!rentalItem) {
           return res.status(400).send("Rental item not found");
       }
