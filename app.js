@@ -38,7 +38,7 @@ const specs = swaggerJsdoc(options);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
 
 // Connect to MongoDB user yuzuadmin and password yuzuadmin123
-mongoose.connect("mongodb+srv://yuzuadmin:yuzuadmin123@cluster0.twbmhw7.mongodb.net/yuzudb?retryWrites=true&w=majority", {
+mongoose.connect("mongodb+srv://yuzuadmin:1hLWt1MKuNg7T5Gl@cluster0.twbmhw7.mongodb.net/yuzudb?retryWrites=true&w=majority", {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 });
@@ -1141,7 +1141,7 @@ app.get('/chats/:chatId', async (req, res) => {
 });
 
 
-const Chat = mongoose.model('Chat', chatSchema);
+//const Chat = mongoose.model('Chat', chatSchema);
 
 // POST endpoint to create a new chat message
 app.post('/chats', async (req, res) => {
