@@ -11,6 +11,7 @@ const swaggerJsdoc = require("swagger-jsdoc");
 const cors = require("cors");
 const request = require('request');
 const rental = require('./rentalsController');
+const product = require("./productsController");
 //const request = require('request');
 
 //https://www.geeksforgeeks.org/how-to-separate-routers-and-controllers-in-node-js/
@@ -18,6 +19,7 @@ const app = express();
 app.use(bodyParser.json());
 app.use("/uploads", express.static("uploads"));
 app.use(rental);
+app.use(product);
 
 app.use(cors());
 const options = {
@@ -218,7 +220,7 @@ const rentalSchema = new mongoose.Schema({
 const User = mongoose.model("User", userSchema);
 const RentalItem = mongoose.model("RentalItem", rentalItemSchema);
 const Rental = mongoose.model("Rental", rentalSchema);
-const RentalProduct = mongoose.model("RentalProduct", rentalProductSchema);
+const RentalProduct = mongoose.model("RentalProduct1", rentalProductSchema);
 const Review = mongoose.model("Review", reviewSchema);
 const Category = mongoose.model("Category", categorySchema);
 const DeliveryOption = mongoose.model("DeliveryOption", deliveryOptionsSchema);
@@ -922,32 +924,6 @@ app.get('/post-rental-item-public', async (req, res) => {
 });
 
 
-app.get('/available-rental-items', async (req, res) => {
-  try {
-    // Fetch the available rental items
-    const availableRentalItems = await RentalProduct.find({ available: true });
-
-    // Generate image URLs for each rental item
-    const rentalItemsWithImages = await Promise.all(
-      availableRentalItems.map(async (rentalItem) => {
-        const imageUrls = await Promise.all(
-          rentalItem.photos.map((photo) => {
-            const imageUrl = `http://144.126.196.146:3000/images/${photo}`;
-            return imageUrl;
-          })
-        );
-        return { rentalItem };
-      })
-    );
-
-    res.status(200).send({ message: 'Available rental items retrieved successfully', rentalItems: rentalItemsWithImages });
-  } catch (error) {
-    console.error(error);
-    res.status(500).send({ message: 'Server error', error });
-  }
-});
-
-
 app.get('/favorite-rental-items', async (req, res) => {
   try {
     // Fetch the available rental items
@@ -1197,7 +1173,7 @@ app.get('/chats/:chatId', async (req, res) => {
 
 
 ///search?make=camera
-app.get("/search", async (req, res) => {
+/*app.get("/search", async (req, res) => {
   try {
     const search = req.query;
     const rentalItems = await RentalItem.find(search).limit(5);
@@ -1205,7 +1181,7 @@ app.get("/search", async (req, res) => {
   } catch (error) {
     res.status(400).send(error);
   }
-});
+});*/
 
 // Route to Add a Review
 app.post("/add-review", verifyToken, async (req, res) => {

@@ -23,4 +23,4 @@ userSchema.set('toJSON', {
   },
 });
 
-module.exports = mongoose.model('User1', userSchema);
+module.exports = mongoose.model('Users', userSchema);

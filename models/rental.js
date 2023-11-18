@@ -14,6 +14,9 @@ const rentalSchema = new mongoose.Schema({
     modifieddate:Date,
     totalamount:String,
     ordernumber:String,
+    receivedbyrentor:Boolean,
+    receivedbyrentee:Boolean,
+    deliverynotes:String,
     productId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "RentalProduct",
