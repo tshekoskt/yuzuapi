@@ -155,11 +155,12 @@ app.post('/register', async (req, res) => {
   
   app.patch("/update-profile", async (req, res) => {
       try {
-        const userId = req.body.userId; // Assuming you have the user ID in the request body
+        /*const userId = req.body._id; // Assuming you have the user ID in the request body
         const newName = req.body.name; // New name value
-        const newSurname = req.body.surname; // New surname value
+        const newSurname = req.body.surname; // New surname value */
     
-        const user = await User.findById(userId);
+        //console.log("req.body : ", req.body);
+        const user = await User.findById(req.body._id);
         if (!user) {
           return res.status(404).send({
             statuscode: 404,
@@ -167,14 +168,33 @@ app.post('/register', async (req, res) => {
           });
         }
     
-        user.name = newName;
-        user.surname = newSurname;
-        await user.save();
+       /* user.name = req.body.name;
+        //user.surname = newSurname;
+        user.address = req.body.address;
+        user.city = req.body.city;
+        user.province = req.body.province;
+        user.postalcode = req.body.postalcode;
+        user.email = req.body.email;
+        user.phone = req.body.phone;*/
+
+        //await user.save();
+
+        var _user = await User.findByIdAndUpdate(
+          {_id:req.body._id},
+          {
+            address:req.body.address,
+            city:req.body.city,
+            province:req.body.province,
+            postalcode:req.body.postalcode,
+            email:req.body.email,
+            phone:req.body.phone
+          }); 
     
         res.send({
           statuscode: 200,
           message: "Profile updated successfully"
         });
+
       } catch (error) {
         console.error(error);
         res.status(500).send({

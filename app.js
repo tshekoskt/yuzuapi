@@ -12,6 +12,7 @@ const cors = require("cors");
 const request = require('request');
 const rental = require('./rentalsController');
 const product = require("./productsController");
+const authorization = require("./authController");
 //const request = require('request');
 
 //https://www.geeksforgeeks.org/how-to-separate-routers-and-controllers-in-node-js/
@@ -20,6 +21,7 @@ app.use(bodyParser.json());
 app.use("/uploads", express.static("uploads"));
 app.use(rental);
 app.use(product);
+app.use(authorization);
 
 app.use(cors());
 const options = {
@@ -419,8 +421,9 @@ app.post('/register', async (req, res) => {
 
 
 
-app.patch("/update-profile", async (req, res) => {
+/*app.patch("/update-profile", async (req, res) => {
   try {
+    
     const userId = req.body.userId; // Assuming you have the user ID in the request body
     const newName = req.body.name; // New name value
     const newSurname = req.body.surname; // New surname value
@@ -448,7 +451,7 @@ app.patch("/update-profile", async (req, res) => {
       message: "Internal server error"
     });
   }
-});
+});*/
 
 
 // Route to Validate OTP
