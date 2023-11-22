@@ -765,7 +765,7 @@ const upload = multer({
   storage
 });
 
-const serverUrl = "http://144.126.196.146:3000"; // Replace with your server's URL
+const serverUrl = "http:/localhost:3000"; // Replace with your server's URL
 
 app.post("/post-rental-item-public", upload.array("photos", 5), async (req, res) => {
   try {
@@ -805,18 +805,20 @@ app.post("/post-rental-item-public", upload.array("photos", 5), async (req, res)
 });
 
 app.patch("/update-rental-item", async (req, res) => {
+  
+  console.log("update rental funtion");
   try {
-    const { itemId, available, status } = req.body;
+    const { _id, available, status } = req.body;
 
-    if (!itemId) {
+    if (!_id) {
       return res.status(400).send({ message: "itemId, available, and status fields are required" });
     }
 
     // Update the rental item in the database
     const updatedItem = await RentalProduct.findByIdAndUpdate(
-      itemId,
-      { available, status },
-      { new: true }
+     { _id: _id},
+      { available:available, status:status }
+      
     );
 
     if (!updatedItem) {
@@ -1201,6 +1203,8 @@ app.post("/add-review", verifyToken, async (req, res) => {
     res.status(400).send(error);
   }
 });
+
+
 
 app.listen(3000, () => {
   console.log("Server started on port 3000");

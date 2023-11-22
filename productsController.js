@@ -79,7 +79,7 @@ const upload = multer({
   storage
 });
 
-const serverUrl = "http://144.126.196.146:3000"; // Replace with your server's URL
+const serverUrl = "http://localhost:3000"; // Replace with your server's URL
 
 app.post("/post-rental-item-public", upload.array("photos", 5), async (req, res) => {
   try {
@@ -120,19 +120,21 @@ app.post("/post-rental-item-public", upload.array("photos", 5), async (req, res)
   }
 });
 
-app.patch("/update-rental-item", async (req, res) => {
+app.patch("/update-rental", async (req, res) => {
+  console.log("update");
   try {
-    const { itemId, available, status, make, model, description, address, price ,photos} = req.body;
+    const { _id, available, status, make, model, description, address, price ,photos} = req.body;
 
-    if (!itemId) {
-      return res.status(400).send({ message: "itemId field is required" });
+    if (!_id) {
+      return res.status(400).send({ message: "_id field is required" });
     }
 
     // Update the rental item in the database
     const updatedItem = await RentalProduct.findByIdAndUpdate(
-      itemId,
-      {available, status, make, model, description, address, price , photos},
-      { new: true }
+      {_id:_id},
+      {available:available, status:status,make:make, model:model, 
+        description:description, address:address, price:price ,photos:photos}
+    
     );
 
     if (!updatedItem) { 
