@@ -675,7 +675,7 @@ app.post('/logout', (req, res) => {
 
 
 // Route to Login a User
-app.post("/login", async (req, res) => {
+/*app.post("/login", async (req, res) => {
   try {
     const user = await User.findOne({ email: req.body.email });
     if (!user) {
@@ -704,7 +704,7 @@ app.post("/login", async (req, res) => {
       message: error.message,
     });
   }
-});
+});*/
 
 
 
