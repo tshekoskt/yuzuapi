@@ -1,4 +1,4 @@
-
+const jwt = require("jsonwebtoken");
 const express = require('express');
 const app = express();
 const bodyParser = require("body-parser");
@@ -230,7 +230,7 @@ app.delete('/delete-rental-item/:itemId', async (req, res) => {
  * creating new rental item
  */
 //verifyToken,
-app.post("/rental", verifyToken,  async(req,res)=> {
+/*app.post("/rental", verifyToken,  async(req,res)=> {
   try{
     const rental = new Rental({
       returned: req.body.returned,
@@ -249,7 +249,7 @@ app.post("/rental", verifyToken,  async(req,res)=> {
       createdBy: req.body.createdBy,
       modifiedBy: req.body.modifiedBy  
     });
-    await rental.save();
+    await RentalItem.save();
 
     res.status(201).send({
       message: "Rental item posted successfully",
@@ -264,7 +264,7 @@ app.post("/rental", verifyToken,  async(req,res)=> {
       console.log("error message", error);
     }
   }
-})
+})*/
 
 app.get("/rentals", async (req, res) => {
   try {
@@ -499,12 +499,12 @@ app.patch("/returnItem", async (req, res) => {
  * creating new rental item
  */
 //verifyToken,
-app.post("/rental",  async(req,res)=> {
+app.post("/rental", verifyToken, async(req,res)=> {
   console.log("rental request.body :", req.body);
   try{
 
     //
-    const rental = new Rental({
+    const rental = new RentalItem({
       returned: req.body.returned,
       cancelled: req.body.cancelled,
       notes: req.body.notes,
@@ -549,7 +549,7 @@ app.get("/rental/:id", verifyToken, async (req, res) => {
     //const id = mongoose.Types.ObjectId(req.params.id);
     const id = req.params.id;
     console.log("req.params.id : ", id);
-      const rentalItem = await Rental.findById(id);//.findById(req.params.id);
+      const rentalItem = await RentalItem.findById(id);//.findById(req.params.id);
       if (!rentalItem) {
           return res.status(400).send("Rental item not found");
       }
@@ -569,10 +569,10 @@ app.get("/rental/:id", verifyToken, async (req, res) => {
 /**
  * Update: cancel rental
  */
-app.post("/rental/cancel", async (req,res)=>{
+app.post("/rental/cancel",verifyToken, async (req,res)=>{
   try{
     console.log("retrun item request : ", req.body);
-    const rentalItem = await Rental.findByIdAndUpdate(
+    const rentalItem = await RentalItem.findByIdAndUpdate(
       {_id:req.body.id},
       {
         cancelled:req.body.cancelled,
@@ -607,9 +607,9 @@ app.post("/rental/cancel", async (req,res)=>{
 /**
  * Update: return rental
  */
-app.post("/rental/return", async (req,res)=>{
+app.post("/rental/return",verifyToken, async (req,res)=>{
   try{
-    const rentalItem = await Rental.findByIdAndUpdate(
+    const rentalItem = await RentalItem.findByIdAndUpdate(
       {_id:req.body.id},
       {
         returned:req.body.returned,
@@ -642,9 +642,9 @@ app.post("/rental/return", async (req,res)=>{
 /**
  * Get Rentals by userId
  */
-app.get("/rental/getByUserId/:id", async (req, res) => {
+app.get("/rental/getByUserId/:id",verifyToken, async (req, res) => {
   try {
-      const rentalItem = await Rental.find({"createdBy": req.params.id});
+      const rentalItem = await RentalItem.find({"createdBy": req.params.id});
       if (!rentalItem) {
           return res.status(400).send("Rental(S) item not found");
       }
@@ -664,11 +664,11 @@ app.get("/rental/getByUserId/:id", async (req, res) => {
 /**
  * rentee confirmed receipt of item
  */
-app.post(`/rental/receivedByRentee`, async(req,res)=> {
+app.post(`/rental/receivedByRentee`,verifyToken, async(req,res)=> {
 
   console.log("accept item", req.body);
   try{
-    const rentalItem = await Rental.findByIdAndUpdate(
+    const rentalItem = await RentalItem.findByIdAndUpdate(
       {_id:req.body._id},
       {        receivedbyrentee:req.body.receivedbyrentee
       });      
@@ -689,10 +689,10 @@ app.post(`/rental/receivedByRentee`, async(req,res)=> {
 /**
  * rentor confirmed receipt of item
  */
-app.post(`/rental/receivedByRentor`, async(req,res)=> {
+app.post(`/rental/receivedByRentor`,verifyToken, async(req,res)=> {
 
   try{
-    const rentalItem = await Rental.findByIdAndUpdate(
+    const rentalItem = await RentalItem.findByIdAndUpdate(
       {_id:req.body.id},
       {
         receivedbyrentor:req.body.receivedbyrentor
