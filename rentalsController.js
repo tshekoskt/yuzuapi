@@ -1,7 +1,7 @@
-const jwt = require("jsonwebtoken");
 const express = require('express');
 const app = express();
 const bodyParser = require("body-parser");
+const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const nodemailer = require("nodemailer");
 const randomstring = require("randomstring");
@@ -11,9 +11,12 @@ const swaggerUi = require("swagger-ui-express");
 const swaggerJsdoc = require("swagger-jsdoc");
 const cors = require("cors");
 const request = require('request');
-const RentalItem = require('./models/rentals');
+//const models = require('./models');
+const RentalItem = require('./models/rental');
 const RentalProduct = require('./models/rentalProducts');
 const userSchema = require('./models/user');
+const EmailService = require('./emailService');
+const EmailServiceInstace = new EmailService();
 
 
 
