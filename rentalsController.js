@@ -486,8 +486,9 @@ app.post("/rental",  async(req,res)=> {
       modifieddate:req.body.modifiedDate,
       totalamount:req.body.totalAmount,
       productId:req.body.productId,
-      createdBy: req.body.createdBy,
-      modifiedBy: req.body.modifiedBy  
+      
+      modifiedBy: req.body.modifiedBy,
+      createdBy: req.body.createdBy, 
     });
     await rental.save();
 
@@ -509,7 +510,7 @@ app.post("/rental",  async(req,res)=> {
 /**
  * Get rental by id
  */
-app.get("/rental/:id", async (req, res) => {
+app.get("/rental/:id", verifyToken, async (req, res) => {
   try {
     
     //const id = mongoose.Types.ObjectId(req.params.id);
