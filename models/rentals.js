@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+/*const mongoose = require('mongoose');
 
 const rentalItemSchema = new mongoose.Schema({
     make: String,
@@ -62,5 +62,5 @@ const rentalItemSchema = new mongoose.Schema({
 }, {
     strict: false
   }
-  );*/
-module.exports = mongoose.model('RentalItem1', rentalItemSchema);
+  );
+module.exports = mongoose.model('RentalItem1', rentalItemSchema); */

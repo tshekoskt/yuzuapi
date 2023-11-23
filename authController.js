@@ -11,6 +11,24 @@ const User = require('./models/user'); // Adjust the path to your User model
 
 // Define functions for register, login, and reset-password
 
+const verifyToken = (req, res, next) => {
+  const bearerHeader = req.headers["authorization"];
+  if (!bearerHeader) {
+    return res.status(401).send("Access Denied");
+  }
+  const bearer = bearerHeader.split(" ");
+  const bearerToken = bearer[1];
+  req.token = bearerToken;
+  jwt.verify(req.token, "secretkey", (error, data) => {
+    if (error) {
+      return res.status(401).send("Invalid Token");
+    }
+    req.userId = data.userId;
+    next();
+  });
+};
+
+
 app.post('/register', async (req, res) => {
     try {
       const user = await User.findOne({ email: req.body.email });
@@ -336,7 +354,7 @@ app.post('/register', async (req, res) => {
     
     
   //Get user by id
-  app.get('/users', async (req, res) => {
+  app.get('/users', verifyToken, async (req, res) => {
       try {
         const user = await User.findById(req.query.id);
         if (!user) {

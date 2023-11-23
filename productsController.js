@@ -13,8 +13,8 @@ const swaggerJsdoc = require("swagger-jsdoc");
 const cors = require("cors");
 const request = require('request');
 //const models = require('./models');
-const RentalItem = require('./models/rentals');
-const Rental = require('./models/rental');
+const RentalItem = require('./models/rental');
+//const Rental = require('./models/rental');
 const RentalProduct = require('./models/rentalProducts');
 const userSchema = require('./models/user');
 
@@ -120,7 +120,7 @@ app.post("/post-rental-item-public", upload.array("photos", 5), async (req, res)
   }
 });
 
-app.patch("/update-rental", async (req, res) => {
+app.patch("/product/update-rental", async (req, res) => {
 
   console.log("update");
   try {
@@ -186,7 +186,7 @@ app.get('/get-rental-item-public', async (req, res) => {
 });
 
 
-app.get('/product/available-rental-items', async (req, res) => {
+app.get('/product/available-rental-items', verifyToken, async (req, res) => {
   try {
     // Fetch the available rental items
     console.log("'available-rental-items inside rentals controller");
@@ -213,7 +213,7 @@ app.get('/product/available-rental-items', async (req, res) => {
 });
 
 
-app.get("/product/search", async (req, res) => {
+app.get("/product/search", verifyToken, async (req, res) => {
     try {
       const search = req.query;
       const rentalItems = await RentalItem.find(search).limit(5);
@@ -223,7 +223,7 @@ app.get("/product/search", async (req, res) => {
     }
   });
 
-app.delete('/delete-rental-item/:itemId', async (req, res) => {
+app.delete('/product/delete-rental-item/:itemId', async (req, res) => {
   try {
     const itemId = req.params.itemId;
 
@@ -284,7 +284,7 @@ app.get("/rentedItems", async (req, res) => {
   }
 });
 
-app.get("/myRentedItems", async (req, res) => {
+app.get("/product/myRentedItems", async (req, res) => {
   try {
     const { userId } = req.query;
 
