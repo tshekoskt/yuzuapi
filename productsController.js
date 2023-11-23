@@ -121,9 +121,10 @@ app.post("/post-rental-item-public", upload.array("photos", 5), async (req, res)
 });
 
 app.patch("/update-rental", async (req, res) => {
+
   console.log("update");
   try {
-    const { _id, available, status, make, model, description, address, price ,photos} = req.body;
+    const { _id, available, status, make, model, description, address, price } = req.body;
 
     if (!_id) {
       return res.status(400).send({ message: "_id field is required" });
@@ -133,7 +134,7 @@ app.patch("/update-rental", async (req, res) => {
     const updatedItem = await RentalProduct.findByIdAndUpdate(
       {_id:_id},
       {available:available, status:status,make:make, model:model, 
-        description:description, address:address, price:price ,photos:photos}
+        description:description, address:address, price:price }
     
     );
 
