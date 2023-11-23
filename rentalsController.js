@@ -2,7 +2,6 @@
 const express = require('express');
 const app = express();
 const bodyParser = require("body-parser");
-const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const nodemailer = require("nodemailer");
 const randomstring = require("randomstring");
@@ -231,7 +230,7 @@ app.delete('/delete-rental-item/:itemId', async (req, res) => {
  * creating new rental item
  */
 //verifyToken,
-app.post("/rental",  async(req,res)=> {
+app.post("/rental", verifyToken,  async(req,res)=> {
   try{
     const rental = new Rental({
       returned: req.body.returned,
