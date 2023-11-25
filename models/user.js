@@ -13,6 +13,9 @@ const userSchema = new mongoose.Schema({
   otp: String,
   userGroup: String,
   isverified: Boolean,
+  province:String,
+  postalcode:String,
+  city:String
 });
 
 userSchema.set('toJSON', {

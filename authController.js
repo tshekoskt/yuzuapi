@@ -171,13 +171,13 @@ app.post('/register', async (req, res) => {
   
   
   
-  app.patch("/update-profile", async (req, res) => {
+  app.patch("/update-profile", verifyToken, async (req, res) => {
       try {
         /*const userId = req.body._id; // Assuming you have the user ID in the request body
         const newName = req.body.name; // New name value
         const newSurname = req.body.surname; // New surname value */
     
-        //console.log("req.body : ", req.body);
+        console.log("req.body : ", req.body);
         const user = await User.findById(req.body._id);
         if (!user) {
           return res.status(404).send({

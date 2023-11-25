@@ -186,7 +186,7 @@ app.get('/get-rental-item-public', async (req, res) => {
 });
 
 
-app.get('/product/available-rental-items', verifyToken, async (req, res) => {
+app.get('/product/available-rental-items', async (req, res) => {
   try {
     // Fetch the available rental items
     console.log("'available-rental-items inside rentals controller");
@@ -368,7 +368,7 @@ app.post("/product/updateAvailability", async(req, res)=>{
     const rentalItem = await RentalProduct.findByIdAndUpdate(
         {_id:req.body.id},
         {
-          available:req.bodyavailable,
+          available:req.body.available,
           status:req.body.status
         }); 
         
