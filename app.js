@@ -23,7 +23,11 @@ app.use(rental);
 app.use(product);
 app.use(authorization);
 
-app.use(cors());
+app.use(cors({
+  origin:'*'
+}));
+
+
 const options = {
   swaggerDefinition: {
     openapi: "3.0.0",

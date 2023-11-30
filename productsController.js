@@ -19,6 +19,10 @@ const RentalProduct = require('./models/rentalProducts');
 const userSchema = require('./models/user');
 
 
+app.use(cors({
+  origin:'*'
+}));
+
 
 const verifyToken = (req, res, next) => {
   const bearerHeader = req.headers["authorization"];

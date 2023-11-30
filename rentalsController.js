@@ -18,7 +18,9 @@ const userSchema = require('./models/user');
 const EmailService = require('./emailService');
 const EmailServiceInstace = new EmailService();
 
-
+app.use(cors({
+  origin:'*'
+}));
 
 const verifyToken = (req, res, next) => {
   const bearerHeader = req.headers["authorization"];
@@ -592,7 +594,38 @@ app.post("/rental/cancel",verifyToken, async (req,res)=>{
       ${rentalItem.notes} `;
       var user = await getUserById(rentalProduct.postedBy);
       var email = user.email;
+      console.log("email to :", email);
       var results = await EmailServiceInstace.sendCancelationEmail(email,body,subject);
+      
+      /*const transporter = nodemailer.createTransport({
+        host: 'smtp.gmail.com',
+        port: 587,
+        secure: false, // or true if required
+        auth: {
+          user: 'yuzuxapp@gmail.com',
+          pass: 'Keeya6262#',
+        },
+      });
+
+      const mailOptions = {
+        from: 'yuzuxapp@gmail.com',
+        to: email,
+        subject: subject,
+        text: body,
+      };
+
+      transporter.sendMail(mailOptions, async function (error, info) {
+        if (error) {
+          console.error(error);
+          return res.status(500).send({
+            statusCode: 500,
+            message: 'Failed to send email',
+          });
+        }
+      });*/
+
+
+
       console.log("email results", results);
       return res.status(200).send({message: "success"});
       

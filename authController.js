@@ -9,7 +9,11 @@ const request = require('request');
 const User = require('./models/user'); // Adjust the path to your User model
 // Import other required modules
 
-// Define functions for register, login, and reset-password
+// Define functions for register, login, and reset-password'
+
+app.use(cors({
+  origin:'*'
+}));
 
 const verifyToken = (req, res, next) => {
   const bearerHeader = req.headers["authorization"];
