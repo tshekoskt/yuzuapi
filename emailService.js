@@ -1,4 +1,5 @@
 const nodemailer = require("nodemailer");
+const constants = require('./constants');
 
 class EmailService{
 
@@ -26,13 +27,13 @@ async sendCancelationEmail(to, body, subject){
     port: 587,
     secure: false, // or true if required    
     auth: {
-      user: 'yuzuxapp@gmail.com',
-      pass: 'Lb4mqJKWz9BxhcHY',
+      user: constants.YUZU_EMAIL, //'yuzuxapp@gmail.com',
+      pass: constants.YUZU_PASS //'Lb4mqJKWz9BxhcHY',
     },
   });
 
   const mailOptions = {
-    from: 'yuzuxapp@gmail.com',
+    from: constants.YUZU_EMAIL, // 'yuzuxapp@gmail.com',
     to:to,
     subject: subject,
     text: body,
