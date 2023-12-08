@@ -22,6 +22,16 @@ app.use(cors({
   origin:'*'
 }));
 
+app.use(bodyParser.json({limit: '35mb'}));
+
+app.use(
+  bodyParser.urlencoded({
+    extended: true,
+    limit: '10mb',
+    parameterLimit: 50000,
+  }),
+);
+
 const verifyToken = (req, res, next) => {
   const bearerHeader = req.headers["authorization"];
   if (!bearerHeader) {
@@ -82,6 +92,7 @@ const upload = multer({
 });
 
 const serverUrl = "http://144.126.196.146:3000"; // Replace with your server's URL
+//const serverUrl = "http://localhost:3000"; // Replace with your server's URL
 
 app.post("/post-rental-item-public", upload.array("photos", 5), async (req, res) => {
   try {
@@ -593,39 +604,9 @@ app.post("/rental/cancel",verifyToken, async (req,res)=>{
       has been cancel with the following reason:
       ${rentalItem.notes} `;
       var user = await getUserById(rentalProduct.postedBy);
-      var email = user.email;
+      var email = user.email;      
       console.log("email to :", email);
       var results = await EmailServiceInstace.sendCancelationEmail(email,body,subject);
-      
-      /*const transporter = nodemailer.createTransport({
-        host: 'smtp.gmail.com',
-        port: 587,
-        secure: false, // or true if required
-        auth: {
-          user: 'yuzuxapp@gmail.com',
-          pass: 'Keeya6262#',
-        },
-      });
-
-      const mailOptions = {
-        from: 'yuzuxapp@gmail.com',
-        to: email,
-        subject: subject,
-        text: body,
-      };
-
-      transporter.sendMail(mailOptions, async function (error, info) {
-        if (error) {
-          console.error(error);
-          return res.status(500).send({
-            statusCode: 500,
-            message: 'Failed to send email',
-          });
-        }
-      });*/
-
-
-
       console.log("email results", results);
       return res.status(200).send({message: "success"});
       
@@ -643,13 +624,18 @@ app.post("/rental/cancel",verifyToken, async (req,res)=>{
 /**
  * Update: return rental
  */
-app.post("/rental/return",verifyToken, async (req,res)=>{
+app.post("/rental/return",verifyToken,upload.array("photos", 3), async (req,res)=>{
   try{
+    console.log("resquest ", req.body.photos);
+
+    //var response = upload.array("photos", 3)
     const rentalItem = await RentalItem.findByIdAndUpdate(
       {_id:req.body.id},
       {
         returned:req.body.returned,
-        notes:req.body.notes
+        notes:req.body.notes,
+        photosbyrentee: req.body.photos.map((file) => `http://localhost:3000/uploads/${file.filename}`),
+
       });
 
       console.log("rental return response", rentalItem);

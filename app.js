@@ -17,7 +17,17 @@ const authorization = require("./authController");
 
 //https://www.geeksforgeeks.org/how-to-separate-routers-and-controllers-in-node-js/
 const app = express();
-app.use(bodyParser.json());
+//app.use(bodyParser.json());
+app.use(bodyParser.json({limit: '35mb'}));
+
+app.use(
+  bodyParser.urlencoded({
+    extended: true,
+    limit: '10mb',
+    parameterLimit: 50000,
+  }),
+);
+
 app.use("/uploads", express.static("uploads"));
 app.use(rental);
 app.use(product);

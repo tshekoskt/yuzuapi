@@ -17,6 +17,7 @@ const rentalProductSchema = new mongoose.Schema({
   enddate: Date,
   photos: [String],
   pictures: [String],
+  weight:Number,
   category: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Category",
