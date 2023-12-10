@@ -11,7 +11,7 @@ class paymentService{
   }
 
   calculateVAT(amount){
-    return percentageAmountCalculator(amount, 14);
+    return percentageAmountCalculator(amount, 15);
   }
 
   /**
