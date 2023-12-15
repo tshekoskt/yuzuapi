@@ -17,6 +17,9 @@ const rentalSchema = new mongoose.Schema({
     receivedbyrentor:Boolean,
     receivedbyrentee:Boolean,
     deliverynotes:String,
+    returntrackingnumber:String,
+    returnnotes:String,
+    trackingnumber:String,
     photosbyrentee: [String],
     productId: {
         type: mongoose.Schema.Types.ObjectId,

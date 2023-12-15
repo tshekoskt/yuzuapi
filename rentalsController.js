@@ -15,8 +15,11 @@ const request = require('request');
 const RentalItem = require('./models/rental');
 const RentalProduct = require('./models/rentalProducts');
 const userSchema = require('./models/user');
+const transactionSchema = require('./models/transaction');
 const EmailService = require('./emailService');
 const EmailServiceInstace = new EmailService();
+const PaymentService = require("./paymentService");
+const paymentService = new PaymentService();
 
 app.use(cors({
   origin:'*'
@@ -112,7 +115,7 @@ app.post("/post-rental-item-public", upload.array("photos", 5), async (req, res)
       category: req.body.categoryId,
       postedBy: req.body.postedBy,
       available: false,
-
+      trackingnumber: req.body.trackingnumber
 
     });
     await rentalProduct.save();
@@ -535,11 +538,12 @@ app.post("/rental", verifyToken, async(req,res)=> {
       modifieddate:req.body.modifiedDate,
       totalamount:req.body.totalAmount,
       productId:req.body.productId,
-      
+      trackingnumber:req.body.trackingnumber,      
       modifiedBy: req.body.modifiedBy,
       createdBy: req.body.createdBy, 
     });
     await rental.save();
+    //create a transaction - transaction table
 
     res.status(201).send({
       message: "Rental item posted successfully",
@@ -633,14 +637,28 @@ app.post("/rental/return",verifyToken,upload.array("photos", 3), async (req,res)
       {_id:req.body.id},
       {
         returned:req.body.returned,
-        notes:req.body.notes,
+        returnnotes:req.body.notes,
+        returntrackingnumber:req.body.trackingnumber,
         photosbyrentee: req.body.photos.map((file) => `http://localhost:3000/uploads/${file.filename}`),
 
       });
 
       console.log("rental return response", rentalItem);
       const rentalProduct = await getProductById(rentalItem.productId);
-      //send cancelation email
+      //calculate rental transaction
+      var amountsResults = calculateRentalCost(rentalItem);
+      const transactionItem = new transactionSchema({
+        vatamount:amountsResults.vatamount,
+        servicefee: amountsResults.servicefee,
+        duetorentor: amountsResults.duetorentor,
+        renteerefund: amountsResults.renteerefund,
+        transactionDate:currentDate,  
+        totalamount:rentalItem.amount, 
+        rental: rentalItem._id
+      });
+      
+      var transactionResults = await transactionItem.save();
+
       var subject = `Rental no. ${rentalItem._id} Item ${rentalProduct.make} returned`;
       var body = `Rental with reference munber ${rentalItem._id}, for product ${rentalProduct.make}, from date ${rentalItem.startdate} until ${rentalProduct.enddate} 
       has been cancel with the following reason:
@@ -649,7 +667,7 @@ app.post("/rental/return",verifyToken,upload.array("photos", 3), async (req,res)
       var email = user.email;
       var results = await EmailServiceInstace.sendCancelationEmail(email,body,subject);
       console.log("email results", results);
-      return res.status(200).send({message: "success"});
+      return res.status(200).send({message: "success", transaction:transactionResults });
   }catch(error){
     console.error(error);
     if (error instanceof mongoose.Error.ValidationError) {
@@ -766,6 +784,19 @@ app.get("/product/getById/:id", async (req, res) => {
 getUserById = async(userId)=> {
   var user = await userSchema.findById({_id:userId})
   return user;
+}
+
+
+/**
+ * Calculate Rental Cost
+ */
+calculutateRentalCost = (item)=>{
+   /**
+       * get current date
+       * calculate rental costs
+       */
+   var currentDate = new Date();
+   return earlyRentalReturnRefund(item.startdate,item.enddate,currentDate, item.amount);
 }
 
 module.exports = app;

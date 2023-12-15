@@ -19,6 +19,7 @@ const RentalProduct = require('./models/rentalProducts');
 const userSchema = require('./models/user');
 const EmailService = require('./emailService');
 const rentalProducts = require('./models/rentalProducts');
+const constants = require('./constants');
 const EmailServiceInstace = new EmailService();
 
 
@@ -37,8 +38,8 @@ app.use(
 );
 
 //Company Details:
-
 const companyname = "TTM";
+const courier_base_url = "https://api.shiplogic.com/v2/";
  // Set the headers for the request (including your ShipLogic API key)
  const headers = {
     'Content-Type': 'application/json',
@@ -66,8 +67,7 @@ const verifyToken = (req, res, next) => {
 const httpheaders = {
     headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer a601d99c75fc4c64b5a64288f97d52b4',// Replace with your actual ShipLogic API key
-        
+        'Authorization': `Bearer ${constants.COURIER_GUY_KEY}`,        
       }
 }; 
 
@@ -152,6 +152,18 @@ app.post("/delivery/courier-guy", verifyToken, async (req, res) => {
 });
 
 /**
+ * get courier-guy key
+ */
+app.post("/delivery/courier-guy-token", verifyToken, async (req, res) => {
+  try {
+    return res.status(200).send({"token": constants.COURIER_GUY_KEY});
+  }
+  catch(error){
+    res.status(400).send(error);
+  }
+});
+
+/**
  * get courier-guy return rates
  */
 app.post("/delivery/courier-guy-return", verifyToken, async (req, res) => {
@@ -231,9 +243,23 @@ app.post("/delivery/courier-guy-return", verifyToken, async (req, res) => {
     }  
   });
 
+
 /**
- * This below is for shipment 
- *    const requestModel = {
+ * create shipment
+*/
+app.post('/delivery/createshipment', verifyToken, async (req,res)=>{
+
+  //get product details
+  var product = await getProductById(req.body.productId);
+  console.log("product is ", req.body.product);
+  //Get rentee details
+  var rentee = await getUserById(req.body.createdBy);
+  //Get rentor details
+  var rentor = await getUserById(product.postedBy);
+  
+  var productValue = parseFloat(product.price)
+  productValue = 1200;
+      const requestModel = {
         "collection_address": {
           "type": "business",
           "company": companyname,
@@ -270,7 +296,7 @@ app.post("/delivery/courier-guy-return", verifyToken, async (req, res) => {
             "submitted_length_cm": 0,
             "submitted_width_cm": 0,
             "submitted_height_cm": 0,
-            "submitted_weight_kg": 2
+            "submitted_weight_kg": product.weight
           }
         ],
         "opt_in_rates": [],
@@ -286,13 +312,41 @@ app.post("/delivery/courier-guy-return", verifyToken, async (req, res) => {
         "delivery_min_date": req.body.startdate,
         "delivery_after": "10:00",
         "delivery_before": "17:00",
-        "custom_tracking_reference": "G63",
-        "customer_reference": `ORDERNO${orderNumber}`,
+        "custom_tracking_reference": "",
+        "customer_reference": `ORDERNO${req.body.orderNumber}`,
         "service_level_code": "ECO",
         "mute_notifications": false
-      };
- */
+      };    
 
+      createShipment(requestModel).then(
+        (response) => {
+          var data = response.data;
+          console.log("data from call ", data);
+          res.send(data);
+        },
+        (error) => {            
+          res.status(500).send({ message: "Server error", error: error });
+        }
+      );     
+
+})
+
+/**
+ * tracking order
+ */
+app.get('/delivery/createshipment/:id', verifyToken, async (req,res)=>{
+    var trackingnumber = req.params.id;
+    trackShipment(trackingnumber).then(
+      (response) => {
+        var data = response.data;
+        console.log("data from call ", data);
+        res.send(data);
+      },
+      (error) => {            
+        res.status(500).send({ message: "Server error", error: error });
+      }
+    );   
+})
 
 /***
  * Helper methods
@@ -308,7 +362,15 @@ getUserById = async(userId)=> {
 }
 
 const getRates = (request)=>{
-    return axios.post('https://api.shiplogic.com/v2/rates', request, httpheaders);
+    return axios.post(`${courier_base_url}rates`, request, httpheaders);
+}
+
+const createShipment = (request)=>{
+    return axios.post(`${courier_base_url}shipments`, request, httpheaders);
+}
+
+const trackShipment = (trackingnumber)=>{
+  return axios.get(`${courier_base_url}shipments?tracking_reference=${trackingnumber}`, httpheaders);
 }
 
 
