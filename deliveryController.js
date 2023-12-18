@@ -334,7 +334,7 @@ app.post('/delivery/createshipment', verifyToken, async (req,res)=>{
 /**
  * tracking order
  */
-app.get('/delivery/createshipment/:id', verifyToken, async (req,res)=>{
+app.get('/delivery/shipment/:id', verifyToken, async (req,res)=>{
     var trackingnumber = req.params.id;
     trackShipment(trackingnumber).then(
       (response) => {
@@ -369,6 +369,8 @@ const createShipment = (request)=>{
     return axios.post(`${courier_base_url}shipments`, request, httpheaders);
 }
 
+//https://api.shiplogic.com/v2/shipments?tracking_reference=XLLZQT
+//there's also https://api.shiplogic.com/v2/tracking/shipments?tracking_reference=XLLZQT that you can use.
 const trackShipment = (trackingnumber)=>{
   return axios.get(`${courier_base_url}shipments?tracking_reference=${trackingnumber}`, httpheaders);
 }
