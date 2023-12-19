@@ -630,6 +630,41 @@ app.post("/rental/cancel", verifyToken, async (req, res) => {
     console.log("rental cancel response", rentalItem);
     //get product
     const rentalProduct = await getProductById(rentalItem.productId);
+
+     //get transaction
+     var transaction = await transactionSchema.find({
+      ordernumber: ordernumber
+    })
+
+    //calculate rental transaction
+
+    if(transaction.length !== 0){
+        var amountsResults = calculateRentalCost(rentalItem);
+        /*const transactionItem = new transactionSchema({
+          vatamount: amountsResults.vatamount,
+          servicefee: amountsResults.servicefee,
+          duetorentor: amountsResults.duetorentor,
+          renteerefund: amountsResults.renteerefund,
+          transactionDate: currentDate,
+          totalamount: rentalItem.amount,
+          rental: rentalItem._id
+        });*/
+
+        
+        //update transaction    
+        transaction.vatamount = amountsResults.vatamount,
+        transaction.servicefee = amountsResults.servicefee,
+        transaction.duetorentor = amountsResults.duetorentor,
+        transaction.renteerefund = amountsResults.renteerefund,
+        await transaction.save();
+
+        if(amountsResults.renteerefund > 0){
+          //create refund transaction entry
+          var refundtransactionItem = refundTransaction(transaction);
+          await refundtransactionItem.save();
+        }
+    }
+
     //send cancelation email
     var subject = `Rental no. ${rentalItem._id} Item ${rentalProduct.make} cancelled`;
     var body = `Rental with reference munber ${rentalItem._id}, for product ${rentalProduct.make}, from date ${rentalItem.startdate} until ${rentalProduct.enddate}
@@ -640,7 +675,8 @@ app.post("/rental/cancel", verifyToken, async (req, res) => {
     console.log("email to :", email);
     var results = await EmailServiceInstace.sendCancelationEmail(email, body, subject);
     console.log("email results", results);
-    return res.status(200).send({ message: "success" });
+    
+    return res.status(200).send({ message: "success", transaction: transaction });
 
   } catch (error) {
     console.error(error);
@@ -673,19 +709,40 @@ app.post("/rental/return",verifyToken,upload.array("photos", 3), async (req,res)
 
     console.log("rental return response", rentalItem);
     const rentalProduct = await getProductById(rentalItem.productId);
-    //calculate rental transaction
-    var amountsResults = calculateRentalCost(rentalItem);
-    const transactionItem = new transactionSchema({
-      vatamount: amountsResults.vatamount,
-      servicefee: amountsResults.servicefee,
-      duetorentor: amountsResults.duetorentor,
-      renteerefund: amountsResults.renteerefund,
-      transactionDate: currentDate,
-      totalamount: rentalItem.amount,
-      rental: rentalItem._id
-    });
 
-    var transactionResults = await transactionItem.save();
+    //get transaction
+    var transaction = await transactionSchema.find({
+      ordernumber: ordernumber
+    })
+
+    //calculate rental transaction
+
+    if(transaction.length !== 0){
+        var amountsResults = calculateRentalCost(rentalItem);
+        /*const transactionItem = new transactionSchema({
+          vatamount: amountsResults.vatamount,
+          servicefee: amountsResults.servicefee,
+          duetorentor: amountsResults.duetorentor,
+          renteerefund: amountsResults.renteerefund,
+          transactionDate: currentDate,
+          totalamount: rentalItem.amount,
+          rental: rentalItem._id
+        });*/
+
+        
+        //update transaction    
+        transaction.vatamount =amountsResults.vatamount,
+        transaction.servicefee = amountsResults.servicefee,
+        transaction.duetorentor = amountsResults.duetorentor,
+        transaction.renteerefund = amountsResults.renteerefund,
+        await transaction.save();
+
+        if(amountsResults.renteerefund > 0){
+          //create refund transaction entry
+          var refundtransactionItem = refundTransaction(transaction);
+          await refundtransactionItem.save();
+        }
+    }
 
     var subject = `Rental no. ${rentalItem._id} Item ${rentalProduct.make} returned`;
     var body = `Rental with reference munber ${rentalItem._id}, for product ${rentalProduct.make}, from date ${rentalItem.startdate} until ${rentalProduct.enddate}
@@ -695,7 +752,8 @@ app.post("/rental/return",verifyToken,upload.array("photos", 3), async (req,res)
     var email = user.email;
     var results = await EmailServiceInstace.sendCancelationEmail(email, body, subject);
     console.log("email results", results);
-    return res.status(200).send({ message: "success", transaction: transactionResults });
+    return res.status(200).send({ message: "success", transaction: transaction });
+
   }
   catch (error) {
     console.error(error);
@@ -820,7 +878,7 @@ getUserById = async (userId) => {
 /**
  * Calculate Rental Cost
  */
-calculutateRentalCost = (item) => {
+calculateRentalCost = (item) => {
   /**
       * get current date
       * calculate rental costs
@@ -829,4 +887,25 @@ calculutateRentalCost = (item) => {
   return earlyRentalReturnRefund(item.startdate, item.enddate, currentDate, item.amount);
 }
 
+/**
+ * Create refund transaction record
+ */
+
+refundTransaction = (transaction) =>{
+  var item = new transactionSchema({
+    vatamount:"0",
+    servicefee: "0",
+    duetorentor: "0",
+    renteerefund: transaction.renteerefund,
+    transactiondate:new Date(),    
+    totalamount: transaction.renteerefund,
+    ordernumber:"refund_" + transaction.ordernumber,    
+    payment_status:"Pending",
+    rental: transaction.rental,
+    rentor: transaction.rentor,
+  });
+
+  return item;
+
+}
 module.exports = app;
