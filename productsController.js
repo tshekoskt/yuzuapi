@@ -20,7 +20,7 @@ const userSchema = require('./models/user');
 
 
 app.use(cors({
-  origin:'*'
+  origin: '*'
 }));
 
 
@@ -136,13 +136,15 @@ app.patch("/product/update-rental", async (req, res) => {
 
     // Update the rental item in the database
     const updatedItem = await RentalProduct.findByIdAndUpdate(
-      {_id:_id},
-      {available:available, status:status,make:make, model:model, 
-        description:description, address:address, price:price }
-    
+      { _id: _id },
+      {
+        available: available, status: status, make: make, model: model,
+        description: description, address: address, price: price
+      }
+
     );
 
-    if (!updatedItem) { 
+    if (!updatedItem) {
       return res.status(404).send({ message: "Rental item not found" });
     }
 
@@ -218,14 +220,14 @@ app.get('/product/available-rental-items', async (req, res) => {
 
 
 app.get("/product/search", verifyToken, async (req, res) => {
-    try {
-      const search = req.query;
-      const rentalItems = await RentalItem.find(search).limit(5);
-      res.send(rentalItems);
-    } catch (error) {
-      res.status(400).send(error);
-    }
-  });
+  try {
+    const search = req.query;
+    const rentalItems = await RentalItem.find(search).limit(5);
+    res.send(rentalItems);
+  } catch (error) {
+    res.status(400).send(error);
+  }
+});
 
 app.delete('/product/delete-rental-item/:itemId', async (req, res) => {
   try {
@@ -293,12 +295,12 @@ app.get("/product/myRentedItems", async (req, res) => {
     const { userId } = req.query;
 
     if (!userId) {
-      
+
       return res.status(400).send({ message: "userId is required as a query parameter" });
     }
 
     // Find rental items with isRented set to true and matching userId
-    const rentedItems = await RentalProduct.find({ postedBy:userId });
+    const rentedItems = await RentalProduct.find({ postedBy: userId });
 
     if (rentedItems.length === 0) {
       return res.status(404).send({ message: "No rented items found for the specified user" });
@@ -349,13 +351,13 @@ app.patch("/returnItem", async (req, res) => {
  *****************************************/
 app.get("/product/getById/:id", async (req, res) => {
   try {
-    console.log("product id",req.params.id);
-    const rentalProduct = await RentalProduct.findById({_id:req.params.id});
-      if (!rentalProduct) {
-          return res.status(400).send("Product item not found");
-      }
-     
-      res.send(rentalProduct);
+    console.log("product id", req.params.id);
+    const rentalProduct = await RentalProduct.findById({ _id: req.params.id });
+    if (!rentalProduct) {
+      return res.status(400).send("Product item not found");
+    }
+
+    res.send(rentalProduct);
   } catch (error) {
     console.error(error);
     if (error instanceof mongoose.Error.ValidationError) {
@@ -367,25 +369,25 @@ app.get("/product/getById/:id", async (req, res) => {
   }
 });
 
-app.post("/product/updateAvailability", async(req, res)=>{
-    try{
+app.post("/product/updateAvailability", async (req, res) => {
+  try {
     const rentalItem = await RentalProduct.findByIdAndUpdate(
-        {_id:req.body.id},
-        {
-          available:req.body.available,
-          status:req.body.status
-        }); 
-        
-        return res.status(200).send({message: "success"});
-    }catch(error){
-      console.error(error);
-      if (error instanceof mongoose.Error.ValidationError) {
-        res.status(400).send({ message: "Validation error", errors: error.errors });
-      } else {
-        res.status(500).send({ message: "Server error", error: error.errors });
-        console.log("error message", error);
-      }
+      { _id: req.body.id },
+      {
+        available: req.body.available,
+        status: req.body.status
+      });
+
+    return res.status(200).send({ message: "success" });
+  } catch (error) {
+    console.error(error);
+    if (error instanceof mongoose.Error.ValidationError) {
+      res.status(400).send({ message: "Validation error", errors: error.errors });
+    } else {
+      res.status(500).send({ message: "Server error", error: error.errors });
+      console.log("error message", error);
     }
-  });
+  }
+});
 
 module.exports = app;
