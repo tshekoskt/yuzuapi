@@ -9,6 +9,10 @@ const transactionSchema = new mongoose.Schema({
     totalamount:String,   
     ordernumber:String,
     payfastid:String,
+    payment_status:String,
+    amount_gross:String,
+    amount_fee:String,
+    amount_net:String,
     rental: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Rental",

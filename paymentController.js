@@ -6,6 +6,7 @@ const jwt = require("jsonwebtoken");
 const cors = require("cors");
 const constants = require("./constants");
 const math = require('math');
+const transactionSchema = require("./models/transaction");
 
 app.use(cors({
     origin:'*'
@@ -37,6 +38,54 @@ app.use(cors({
       next();
     });
   };
+
+/**
+ * Payfast notify_url
+ */
+
+app.get('/payment/notification',async (req,res)=>{
+  res.status(200);  
+  console.log("payload req : ", req);
+  console.log("payload body : ", req.body);
+  var payload = req.body;
+  //run validations
+
+  //check if transaction exist
+  var transaction = await transactionSchema.find({
+    ordernumber: ordernumber
+  })
+
+  if(transaction.length == 0){
+    //create a transaction
+    var newTransaction = new transactionSchema({   
+      transactiondate:new Date(),  
+      ordernumber:payload.m_payment_id,
+      payfastid:payload.pf_payment_id,
+      payment_status:payload.payment_status,
+      amount_gross:payload.amount_gross,
+      amount_fee:payload.amount_fee,
+      amount_net:payload.amount_net,
+    });
+    await newTransaction.save();
+
+  }else{
+    //update transaction    
+    transaction.payfastid = payload.pf_payment_id;
+    transaction.payment_status = payload.payment_status;
+    transaction.amount_gross = payload.amount_gross;
+    transaction.amount_fee = payload.amount_fee;
+    transaction.amount_net = payload.amount_net;   
+    await transaction.save();
+  }
+  
+})
+
+app.post('/payment/notification',(req,res)=>{
+  res.status(200);  
+  console.log("payload body : ", req.body);
+  //run validations
+})
+
 
 /**
  * provider_id for use with courier guy api requests.
@@ -93,3 +142,5 @@ app.use(cors({
       var utcStart = Date.UTC(stardate.getFullYear(), stardate.getMonth(), stardate.getDate()) 
       return Math.floor((utcEnd - utcStart)/MS_PER_DAY);
   }
+
+module.exports = app;

@@ -14,6 +14,7 @@ const rental = require('./rentalsController');
 const product = require("./productsController");
 const authorization = require("./authController");
 const courier_delivery = require("./deliveryController");
+const payment = require("./paymentController");
 //const request = require('request');
 
 //https://www.geeksforgeeks.org/how-to-separate-routers-and-controllers-in-node-js/
@@ -34,6 +35,7 @@ app.use(rental);
 app.use(product);
 app.use(authorization);
 app.use(courier_delivery);
+app.use(payment);
 
 app.use(cors({
   origin:'*'

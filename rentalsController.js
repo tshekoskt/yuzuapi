@@ -522,6 +522,7 @@ app.post("/rental", verifyToken, async(req,res)=> {
   console.log("rental request.body :", req.body);
   try{
 
+    var ordernumber = req.body.orderNumber;
     //
     const rental = new RentalItem({
       returned: req.body.returned,
@@ -541,9 +542,35 @@ app.post("/rental", verifyToken, async(req,res)=> {
       trackingnumber:req.body.trackingnumber,      
       modifiedBy: req.body.modifiedBy,
       createdBy: req.body.createdBy, 
+      ordernumber: ordernumber
     });
     await rental.save();
     //create a transaction - transaction table
+    var product = await RentalProduct.findById(req.body.productId);
+
+    var transaction = await transactionSchema.find({
+      ordernumber: ordernumber
+    })
+
+    if(transaction.length == 0){
+      //create transaction
+      var newTransaction = new transactionSchema({      
+      transactiondate:new Date(),    
+      totalamount:req.body.amount,   
+      ordernumber:ordernumber,      
+      payment_status:"Pending",      
+      rental:rental._id,
+      rentor: product.postedBy
+      });
+
+      await newTransaction.save();
+    }else{
+      //update transaction    
+      transaction.totalamount = req.body.amount;         
+      transaction.rental = rental._id,
+      transaction.rentor = product.postedBy
+      await transaction.save();
+    }
 
     res.status(201).send({
       message: "Rental item posted successfully",
@@ -630,7 +657,7 @@ app.post("/rental/cancel",verifyToken, async (req,res)=>{
  */
 app.post("/rental/return",verifyToken,upload.array("photos", 3), async (req,res)=>{
   try{
-    console.log("resquest ", req.body.photos);
+    console.log("request ", req.body.photos);
 
     //var response = upload.array("photos", 3)
     const rentalItem = await RentalItem.findByIdAndUpdate(
@@ -639,7 +666,7 @@ app.post("/rental/return",verifyToken,upload.array("photos", 3), async (req,res)
         returned:req.body.returned,
         returnnotes:req.body.notes,
         returntrackingnumber:req.body.trackingnumber,
-        photosbyrentee: req.body.photos.map((file) => `http://localhost:3000/uploads/${file.filename}`),
+        photosbyrentee: req.body.photos.map((file) => `http://144.126.196.146:3000/uploads/${file.filename}`),
 
       });
 
