@@ -22,10 +22,10 @@ const PaymentService = require("./paymentService");
 const paymentService = new PaymentService();
 
 app.use(cors({
-  origin:'*'
+  origin: '*'
 }));
 
-app.use(bodyParser.json({limit: '35mb'}));
+app.use(bodyParser.json({ limit: '35mb' }));
 
 app.use(
   bodyParser.urlencoded({
@@ -108,6 +108,7 @@ app.post("/post-rental-item-public", upload.array("photos", 5), async (req, res)
       categories: req.body.categories,
       SubCategories: req.body.SubCategories,
       price: req.body.price,
+      weight: req.body.weight,
       status: req.body.status,
       deliveryOption: req.body.deliveryOption,
       photos: req.files.map((file) => `${serverUrl}/uploads/${file.filename}`), // Add the file path to the image URL
@@ -138,7 +139,7 @@ app.post("/post-rental-item-public", upload.array("photos", 5), async (req, res)
 
 app.patch("/update-rental-item", async (req, res) => {
   try {
-    const { itemId, available, status, make, model, description, address, price ,photos} = req.body;
+    const { itemId, available, status, make, model, description, address, price, photos } = req.body;
 
     if (!itemId) {
       return res.status(400).send({ message: "itemId field is required" });
@@ -147,11 +148,11 @@ app.patch("/update-rental-item", async (req, res) => {
     // Update the rental item in the database
     const updatedItem = await RentalProduct.findByIdAndUpdate(
       itemId,
-      {available, status, make, model, description, address, price , photos},
+      { available, status, make, model, description, address, price, photos },
       { new: true }
     );
 
-    if (!updatedItem) { 
+    if (!updatedItem) {
       return res.status(404).send({ message: "Rental item not found" });
     }
 
@@ -266,13 +267,13 @@ app.delete('/delete-rental-item/:itemId', async (req, res) => {
       totalamount:req.body.totalAmount,
       productId:req.body.productId,
       createdBy: req.body.createdBy,
-      modifiedBy: req.body.modifiedBy  
+      modifiedBy: req.body.modifiedBy
     });
     await RentalItem.save();
 
     res.status(201).send({
       message: "Rental item posted successfully",
-      rental      
+      rental
     });
   } catch (error) {
     console.error(error);
@@ -459,12 +460,12 @@ app.get("/myRentedItems", async (req, res) => {
     const { userId } = req.query;
 
     if (!userId) {
-      
+
       return res.status(400).send({ message: "userId is required as a query parameter" });
     }
 
     // Find rental items with isRented set to true and matching userId
-    const rentedItems = await RentalProduct.find({ postedBy:userId });
+    const rentedItems = await RentalProduct.find({ postedBy: userId });
 
     if (rentedItems.length === 0) {
       return res.status(404).send({ message: "No rented items found for the specified user" });
@@ -518,9 +519,9 @@ app.patch("/returnItem", async (req, res) => {
  * creating new rental item
  */
 //verifyToken,
-app.post("/rental", verifyToken, async(req,res)=> {
+app.post("/rental", verifyToken, async (req, res) => {
   console.log("rental request.body :", req.body);
-  try{
+  try {
 
     var ordernumber = req.body.orderNumber;
     //
@@ -530,16 +531,16 @@ app.post("/rental", verifyToken, async(req,res)=> {
       notes: req.body.notes,
       startdate: req.body.startDate,
       enddate: req.body.endDate,
-      duration:req.body.duration,
-      amount:req.body.amount,
-      deliveryoption:req.body.deliveryOption,
-      deliveryamount:req.body.deliveryAmount,
-      deliverynotes:req.body.deliveryNotes,
-      createddate:req.body.createdDate,
-      modifieddate:req.body.modifiedDate,
-      totalamount:req.body.totalAmount,
-      productId:req.body.productId,
-      trackingnumber:req.body.trackingnumber,      
+      duration: req.body.duration,
+      amount: req.body.amount,
+      deliveryoption: req.body.deliveryOption,
+      deliveryamount: req.body.deliveryAmount,
+      deliverynotes: req.body.deliveryNotes,
+      createddate: req.body.createdDate,
+      modifieddate: req.body.modifiedDate,
+      totalamount: req.body.totalAmount,
+      productId: req.body.productId,
+      trackingnumber: req.body.trackingnumber,
       modifiedBy: req.body.modifiedBy,
       createdBy: req.body.createdBy, 
       ordernumber: ordernumber
@@ -574,7 +575,7 @@ app.post("/rental", verifyToken, async(req,res)=> {
 
     res.status(201).send({
       message: "Rental item posted successfully",
-      rental      
+      rental
     });
   } catch (error) {
     console.error(error);
@@ -592,16 +593,16 @@ app.post("/rental", verifyToken, async(req,res)=> {
  */
 app.get("/rental/:id", verifyToken, async (req, res) => {
   try {
-    
+
     //const id = mongoose.Types.ObjectId(req.params.id);
     const id = req.params.id;
     console.log("req.params.id : ", id);
-      const rentalItem = await RentalItem.findById(id);//.findById(req.params.id);
-      if (!rentalItem) {
-          return res.status(400).send("Rental item not found");
-      }
-     
-      res.send(rentalItem);
+    const rentalItem = await RentalItem.findById(id);//.findById(req.params.id);
+    if (!rentalItem) {
+      return res.status(400).send("Rental item not found");
+    }
+
+    res.send(rentalItem);
   } catch (error) {
     console.error(error);
     if (error instanceof mongoose.Error.ValidationError) {
@@ -616,32 +617,32 @@ app.get("/rental/:id", verifyToken, async (req, res) => {
 /**
  * Update: cancel rental
  */
-app.post("/rental/cancel",verifyToken, async (req,res)=>{
-  try{
+app.post("/rental/cancel", verifyToken, async (req, res) => {
+  try {
     console.log("retrun item request : ", req.body);
     const rentalItem = await RentalItem.findByIdAndUpdate(
-      {_id:req.body.id},
+      { _id: req.body.id },
       {
-        cancelled:req.body.cancelled,
-        notes:req.body.notes
+        cancelled: req.body.cancelled,
+        notes: req.body.notes
       });
 
-      console.log("rental cancel response", rentalItem);
-      //get product
-      const rentalProduct = await getProductById(rentalItem.productId);
-      //send cancelation email
-      var subject = `Rental no. ${rentalItem._id} Item ${rentalProduct.make} cancelled`;
-      var body = `Rental with reference munber ${rentalItem._id}, for product ${rentalProduct.make}, from date ${rentalItem.startdate} until ${rentalProduct.enddate} 
+    console.log("rental cancel response", rentalItem);
+    //get product
+    const rentalProduct = await getProductById(rentalItem.productId);
+    //send cancelation email
+    var subject = `Rental no. ${rentalItem._id} Item ${rentalProduct.make} cancelled`;
+    var body = `Rental with reference munber ${rentalItem._id}, for product ${rentalProduct.make}, from date ${rentalItem.startdate} until ${rentalProduct.enddate}
       has been cancel with the following reason:
       ${rentalItem.notes} `;
-      var user = await getUserById(rentalProduct.postedBy);
-      var email = user.email;      
-      console.log("email to :", email);
-      var results = await EmailServiceInstace.sendCancelationEmail(email,body,subject);
-      console.log("email results", results);
-      return res.status(200).send({message: "success"});
-      
-  }catch(error){
+    var user = await getUserById(rentalProduct.postedBy);
+    var email = user.email;
+    console.log("email to :", email);
+    var results = await EmailServiceInstace.sendCancelationEmail(email, body, subject);
+    console.log("email results", results);
+    return res.status(200).send({ message: "success" });
+
+  } catch (error) {
     console.error(error);
     if (error instanceof mongoose.Error.ValidationError) {
       res.status(400).send({ message: "Validation error", errors: error.errors });
@@ -661,7 +662,7 @@ app.post("/rental/return",verifyToken,upload.array("photos", 3), async (req,res)
 
     //var response = upload.array("photos", 3)
     const rentalItem = await RentalItem.findByIdAndUpdate(
-      {_id:req.body.id},
+      { _id: req.body.id },
       {
         returned:req.body.returned,
         returnnotes:req.body.notes,
@@ -670,32 +671,33 @@ app.post("/rental/return",verifyToken,upload.array("photos", 3), async (req,res)
 
       });
 
-      console.log("rental return response", rentalItem);
-      const rentalProduct = await getProductById(rentalItem.productId);
-      //calculate rental transaction
-      var amountsResults = calculateRentalCost(rentalItem);
-      const transactionItem = new transactionSchema({
-        vatamount:amountsResults.vatamount,
-        servicefee: amountsResults.servicefee,
-        duetorentor: amountsResults.duetorentor,
-        renteerefund: amountsResults.renteerefund,
-        transactionDate:currentDate,  
-        totalamount:rentalItem.amount, 
-        rental: rentalItem._id
-      });
-      
-      var transactionResults = await transactionItem.save();
+    console.log("rental return response", rentalItem);
+    const rentalProduct = await getProductById(rentalItem.productId);
+    //calculate rental transaction
+    var amountsResults = calculateRentalCost(rentalItem);
+    const transactionItem = new transactionSchema({
+      vatamount: amountsResults.vatamount,
+      servicefee: amountsResults.servicefee,
+      duetorentor: amountsResults.duetorentor,
+      renteerefund: amountsResults.renteerefund,
+      transactionDate: currentDate,
+      totalamount: rentalItem.amount,
+      rental: rentalItem._id
+    });
 
-      var subject = `Rental no. ${rentalItem._id} Item ${rentalProduct.make} returned`;
-      var body = `Rental with reference munber ${rentalItem._id}, for product ${rentalProduct.make}, from date ${rentalItem.startdate} until ${rentalProduct.enddate} 
+    var transactionResults = await transactionItem.save();
+
+    var subject = `Rental no. ${rentalItem._id} Item ${rentalProduct.make} returned`;
+    var body = `Rental with reference munber ${rentalItem._id}, for product ${rentalProduct.make}, from date ${rentalItem.startdate} until ${rentalProduct.enddate}
       has been cancel with the following reason:
       ${rentalItem.notes} `;
-      var user = await getUserById(rentalProduct.postedBy);
-      var email = user.email;
-      var results = await EmailServiceInstace.sendCancelationEmail(email,body,subject);
-      console.log("email results", results);
-      return res.status(200).send({message: "success", transaction:transactionResults });
-  }catch(error){
+    var user = await getUserById(rentalProduct.postedBy);
+    var email = user.email;
+    var results = await EmailServiceInstace.sendCancelationEmail(email, body, subject);
+    console.log("email results", results);
+    return res.status(200).send({ message: "success", transaction: transactionResults });
+  }
+  catch (error) {
     console.error(error);
     if (error instanceof mongoose.Error.ValidationError) {
       res.status(400).send({ message: "Validation error", errors: error.errors });
@@ -709,14 +711,14 @@ app.post("/rental/return",verifyToken,upload.array("photos", 3), async (req,res)
 /**
  * Get Rentals by userId
  */
-app.get("/rental/getByUserId/:id",verifyToken, async (req, res) => {
+app.get("/rental/getByUserId/:id", verifyToken, async (req, res) => {
   try {
-      const rentalItem = await RentalItem.find({"createdBy": req.params.id});
-      if (!rentalItem) {
-          return res.status(400).send("Rental(S) item not found");
-      }
-     
-      res.send(rentalItem);
+    const rentalItem = await RentalItem.find({ "createdBy": req.params.id });
+    if (!rentalItem) {
+      return res.status(400).send("Rental(S) item not found");
+    }
+
+    res.send(rentalItem);
   } catch (error) {
     console.error(error);
     if (error instanceof mongoose.Error.ValidationError) {
@@ -731,17 +733,18 @@ app.get("/rental/getByUserId/:id",verifyToken, async (req, res) => {
 /**
  * rentee confirmed receipt of item
  */
-app.post(`/rental/receivedByRentee`,verifyToken, async(req,res)=> {
+app.post(`/rental/receivedByRentee`, verifyToken, async (req, res) => {
 
   console.log("accept item", req.body);
-  try{
+  try {
     const rentalItem = await RentalItem.findByIdAndUpdate(
-      {_id:req.body._id},
-      {        receivedbyrentee:req.body.receivedbyrentee
-      });      
-      console.log("rentanl item : ", rentalItem);
-      return res.status(200).send({message: "success"});
-  }catch(error){
+      { _id: req.body._id },
+      {
+        receivedbyrentee: req.body.receivedbyrentee
+      });
+    console.log("rentanl item : ", rentalItem);
+    return res.status(200).send({ message: "success" });
+  } catch (error) {
     console.error(error);
     if (error instanceof mongoose.Error.ValidationError) {
       res.status(400).send({ message: "Validation error", errors: error.errors });
@@ -756,16 +759,16 @@ app.post(`/rental/receivedByRentee`,verifyToken, async(req,res)=> {
 /**
  * rentor confirmed receipt of item
  */
-app.post(`/rental/receivedByRentor`,verifyToken, async(req,res)=> {
+app.post(`/rental/receivedByRentor`, verifyToken, async (req, res) => {
 
-  try{
+  try {
     const rentalItem = await RentalItem.findByIdAndUpdate(
-      {_id:req.body.id},
+      { _id: req.body.id },
       {
-        receivedbyrentor:req.body.receivedbyrentor
-      });      
-      return res.status(200).send({message: "success"});
-  }catch(error){
+        receivedbyrentor: req.body.receivedbyrentor
+      });
+    return res.status(200).send({ message: "success" });
+  } catch (error) {
     console.error(error);
     if (error instanceof mongoose.Error.ValidationError) {
       res.status(400).send({ message: "Validation error", errors: error.errors });
@@ -782,13 +785,13 @@ app.post(`/rental/receivedByRentor`,verifyToken, async(req,res)=> {
  *****************************************/
 app.get("/product/getById/:id", async (req, res) => {
   try {
-    console.log("product id",req.params.id);
-    const rentalProduct = await RentalProduct.findById({_id:req.params.id});
-      if (!rentalProduct) {
-          return res.status(400).send("Product item not found");
-      }
-     
-      res.send(rentalProduct);
+    console.log("product id", req.params.id);
+    const rentalProduct = await RentalProduct.findById({ _id: req.params.id });
+    if (!rentalProduct) {
+      return res.status(400).send("Product item not found");
+    }
+
+    res.send(rentalProduct);
   } catch (error) {
     console.error(error);
     if (error instanceof mongoose.Error.ValidationError) {
@@ -803,13 +806,13 @@ app.get("/product/getById/:id", async (req, res) => {
 /***
  * Helper methods
  */
- getProductById = async(productId)=> {
-  var product = await RentalProduct.findById({_id:productId})
+getProductById = async (productId) => {
+  var product = await RentalProduct.findById({ _id: productId })
   return product;
 }
 
-getUserById = async(userId)=> {
-  var user = await userSchema.findById({_id:userId})
+getUserById = async (userId) => {
+  var user = await userSchema.findById({ _id: userId })
   return user;
 }
 
@@ -817,13 +820,13 @@ getUserById = async(userId)=> {
 /**
  * Calculate Rental Cost
  */
-calculutateRentalCost = (item)=>{
-   /**
-       * get current date
-       * calculate rental costs
-       */
-   var currentDate = new Date();
-   return earlyRentalReturnRefund(item.startdate,item.enddate,currentDate, item.amount);
+calculutateRentalCost = (item) => {
+  /**
+      * get current date
+      * calculate rental costs
+      */
+  var currentDate = new Date();
+  return earlyRentalReturnRefund(item.startdate, item.enddate, currentDate, item.amount);
 }
 
 module.exports = app;

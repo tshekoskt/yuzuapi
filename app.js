@@ -20,7 +20,7 @@ const payment = require("./paymentController");
 //https://www.geeksforgeeks.org/how-to-separate-routers-and-controllers-in-node-js/
 const app = express();
 //app.use(bodyParser.json());
-app.use(bodyParser.json({limit: '35mb'}));
+app.use(bodyParser.json({ limit: '35mb' }));
 
 app.use(
   bodyParser.urlencoded({
@@ -38,7 +38,7 @@ app.use(courier_delivery);
 app.use(payment);
 
 app.use(cors({
-  origin:'*'
+  origin: '*'
 }));
 
 
@@ -441,7 +441,7 @@ app.post('/register', async (req, res) => {
 
 /*app.patch("/update-profile", async (req, res) => {
   try {
-    
+
     const userId = req.body.userId; // Assuming you have the user ID in the request body
     const newName = req.body.name; // New name value
     const newSurname = req.body.surname; // New surname value
@@ -797,6 +797,7 @@ app.post("/post-rental-item-public", upload.array("photos", 5), async (req, res)
       SubCategories: req.body.SubCategories,
       price: req.body.price,
       status: req.body.status,
+      weight: req.body.weight,
       deliveryOption: req.body.deliveryOption,
       photos: req.files.map((file) => `${serverUrl}/uploads/${file.filename}`), // Add the file path to the image URL
       pictures: req.body.pictures,
@@ -823,7 +824,7 @@ app.post("/post-rental-item-public", upload.array("photos", 5), async (req, res)
 });
 
 app.patch("/update-rental-item", async (req, res) => {
-  
+
   console.log("update rental funtion");
   try {
     const { _id, available, status } = req.body;
@@ -834,9 +835,9 @@ app.patch("/update-rental-item", async (req, res) => {
 
     // Update the rental item in the database
     const updatedItem = await RentalProduct.findByIdAndUpdate(
-     { _id: _id},
-      { available:available, status:status }
-      
+      { _id: _id },
+      { available: available, status: status }
+
     );
 
     if (!updatedItem) {
