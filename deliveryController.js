@@ -250,15 +250,23 @@ app.post("/delivery/courier-guy-return", verifyToken, async (req, res) => {
 app.post('/delivery/createshipment', verifyToken, async (req,res)=>{
 
   //get product details
+  //console.log("req.body.productId : ", req.body.productId);
   var product = await getProductById(req.body.productId);
-  console.log("product is ", req.body.product);
+  //console.log("product is ", product);
   //Get rentee details
   var rentee = await getUserById(req.body.createdBy);
+  console.log("rentee is ", rentee);
   //Get rentor details
   var rentor = await getUserById(product.postedBy);
+  console.log("rentor is ", rentor);
   
   var productValue = parseFloat(product.price)
-  productValue = 1200;
+  var weight = parseInt(product.weight)
+  //productValue = 1200;
+  //weight = 3;
+  var collection_min_date = req.body.startDate + "T08:00:00.000Z";
+  var delivery_min_date = req.body.startDate + "T10:00:00.000Z";
+
       const requestModel = {
         "collection_address": {
           "type": "business",
@@ -296,7 +304,7 @@ app.post('/delivery/createshipment', verifyToken, async (req,res)=>{
             "submitted_length_cm": 0,
             "submitted_width_cm": 0,
             "submitted_height_cm": 0,
-            "submitted_weight_kg": product.weight
+            "submitted_weight_kg": weight
           }
         ],
         "opt_in_rates": [],
@@ -304,16 +312,16 @@ app.post('/delivery/createshipment', verifyToken, async (req,res)=>{
           76
         ],
         "special_instructions_collection": "This is a test shipment - DO NOT COLLECT",
-        "special_instructions_delivery": "This is a test shipment - DO NOT DELIVER",
+        "special_instructions_delivery": req.body.deliveryNotes,
         "declared_value": productValue,
-        "collection_min_date": req.body.startdate,
+        "collection_min_date": collection_min_date,
         "collection_after": "08:00",
         "collection_before": "16:00",
-        "delivery_min_date": req.body.startdate,
+        "delivery_min_date": delivery_min_date,
         "delivery_after": "10:00",
         "delivery_before": "17:00",
         "custom_tracking_reference": "",
-        "customer_reference": `ORDERNO${req.body.orderNumber}`,
+        "customer_reference": req.body.orderNumber,
         "service_level_code": "ECO",
         "mute_notifications": false
       };    
@@ -321,10 +329,11 @@ app.post('/delivery/createshipment', verifyToken, async (req,res)=>{
       createShipment(requestModel).then(
         (response) => {
           var data = response.data;
-          console.log("data from call ", data);
+          //console.log("data from call ", data);
           res.send(data);
         },
         (error) => {            
+          console.log("error:", error);
           res.status(500).send({ message: "Server error", error: error });
         }
       );     
