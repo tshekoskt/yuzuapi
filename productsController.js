@@ -16,6 +16,7 @@ const request = require('request');
 const RentalItem = require('./models/rental');
 //const Rental = require('./models/rental');
 const RentalProduct = require('./models/rentalProducts');
+const Query = require('./models/query');
 const userSchema = require('./models/user');
 
 
@@ -124,6 +125,21 @@ app.post("/post-rental-item-public", upload.array("photos", 5), async (req, res)
   }
 });
 
+app.post("/product/post-query", async (req, res) => { //post query
+  try {
+    const query = new Query({
+      name: req.body.name,
+      email: req.body.email,
+      message: req.body.message,
+      isactive: true
+    });
+    await query.save();
+    res.status(200).json({ message: "Query added successfully" });
+  } catch (error) {
+    res.status(400).send(error);
+  }
+});
+
 app.patch("/product/update-rental", async (req, res) => {
 
   console.log("update");
@@ -163,6 +179,7 @@ app.patch("/product/update-rental", async (req, res) => {
 
 const path = require('path');
 const { Stream } = require("stream");
+const query = require('./models/query');
 
 app.get('/get-rental-item-public', async (req, res) => {
   try {
