@@ -87,7 +87,7 @@ app.get('/payment/notification',async (req,res)=>{
 
 app.post('/payment/notification',async (req,res)=>{
   res.status(200);  
-  console.log("payload body : ", req.body);
+  //console.log("payload body : ", req.body);
   var payload = req.body;
 
   //run validations
@@ -96,7 +96,7 @@ app.post('/payment/notification',async (req,res)=>{
     ordernumber: payload.m_payment_id
   });
 
-  console.log("transaction : ", transaction);
+  //console.log("transaction : ", transaction);
 
   if(transaction.length == 0){
     //create a transaction
@@ -110,7 +110,7 @@ app.post('/payment/notification',async (req,res)=>{
       amount_net:payload.amount_net,
     });
     var newTrans = await newTransaction.save();
-    console.log("newTrans : ", newTrans);
+    //console.log("newTrans : ", newTrans);
 
   }else{
     //update transaction    
@@ -120,7 +120,7 @@ app.post('/payment/notification',async (req,res)=>{
     transaction.amount_fee = payload.amount_fee;
     transaction.amount_net = payload.amount_net;   
     await transaction.save();
-    console.log("update transaction : ", transaction);
+    //console.log("update transaction : ", transaction);
   }
 
 })

@@ -255,10 +255,10 @@ app.post('/delivery/createshipment', verifyToken, async (req,res)=>{
   //console.log("product is ", product);
   //Get rentee details
   var rentee = await getUserById(req.body.createdBy);
-  console.log("rentee is ", rentee);
+  //console.log("rentee is ", rentee);
   //Get rentor details
   var rentor = await getUserById(product.postedBy);
-  console.log("rentor is ", rentor);
+  //console.log("rentor is ", rentor);
   
   var productValue = parseFloat(product.price)
   var weight = parseInt(product.weight)

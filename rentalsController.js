@@ -520,7 +520,7 @@ app.patch("/returnItem", async (req, res) => {
  */
 //verifyToken,
 app.post("/rental", verifyToken, async (req, res) => {
-  console.log("rental request.body :", req.body);
+  //console.log("rental request.body :", req.body);
   try {
 
     var ordernumber = req.body.orderNumber;
@@ -619,7 +619,7 @@ app.get("/rental/:id", verifyToken, async (req, res) => {
  */
 app.post("/rental/cancel", verifyToken, async (req, res) => {
   try {
-    console.log("retrun item request : ", req.body);
+    //console.log("retrun item request : ", req.body);
     const rentalItem = await RentalItem.findByIdAndUpdate(
       { _id: req.body.id },
       {
@@ -627,7 +627,7 @@ app.post("/rental/cancel", verifyToken, async (req, res) => {
         notes: req.body.notes
       });
 
-    console.log("rental cancel response", rentalItem);
+    //console.log("rental cancel response", rentalItem);
     //get product
     const rentalProduct = await getProductById(rentalItem.productId);
 
@@ -672,7 +672,7 @@ app.post("/rental/cancel", verifyToken, async (req, res) => {
       ${rentalItem.notes} `;
     var user = await getUserById(rentalProduct.postedBy);
     var email = user.email;
-    console.log("email to :", email);
+    //console.log("email to :", email);
     var results = await EmailServiceInstace.sendCancelationEmail(email, body, subject);
     console.log("email results", results);
     
