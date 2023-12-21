@@ -41,7 +41,7 @@ app.use(cors({
 
 /**
  * Payfast notify_url
- */
+
 
 app.get('/payment/notification',async (req,res)=>{
   res.status(200);  
@@ -79,11 +79,50 @@ app.get('/payment/notification',async (req,res)=>{
   }
   
 })
+ */
 
-app.post('/payment/notification',(req,res)=>{
+/**
+ * Payfast notify_url
+ */
+
+app.post('/payment/notification',async (req,res)=>{
   res.status(200);  
   console.log("payload body : ", req.body);
+  var payload = req.body;
+
   //run validations
+  //check if transaction exist
+  var transaction = await transactionSchema.find({
+    ordernumber: payload.m_payment_id
+  });
+
+  console.log("transaction : ", transaction);
+
+  if(transaction.length == 0){
+    //create a transaction
+    var newTransaction = new transactionSchema({   
+      transactiondate:new Date(),  
+      ordernumber:payload.m_payment_id,
+      payfastid:payload.pf_payment_id,
+      payment_status:payload.payment_status,
+      amount_gross:payload.amount_gross,
+      amount_fee:payload.amount_fee,
+      amount_net:payload.amount_net,
+    });
+    var newTrans = await newTransaction.save();
+    console.log("newTrans : ", newTrans);
+
+  }else{
+    //update transaction    
+    transaction.payfastid = payload.pf_payment_id;
+    transaction.payment_status = payload.payment_status;
+    transaction.amount_gross = payload.amount_gross;
+    transaction.amount_fee = payload.amount_fee;
+    transaction.amount_net = payload.amount_net;   
+    await transaction.save();
+    console.log("update transaction : ", transaction);
+  }
+
 })
 
 
