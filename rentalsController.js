@@ -52,7 +52,7 @@ const verifyToken = (req, res, next) => {
   });
 };
 
-//Look ups
+
 app.post("/add-category", async (req, res) => {
   try {
     const category = new Category({
@@ -171,6 +171,7 @@ app.patch("/update-rental-item", async (req, res) => {
 
 const path = require('path');
 const { Stream } = require("stream");
+const constants = require('./constants');
 
 app.get('/get-rental-item-public', async (req, res) => {
   try {
@@ -225,6 +226,27 @@ app.get('/available-rental-items', async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /delete-rental-item/{itemId}:
+ *   delete:
+ *     summary: Delete a rental item by ID
+ *     description: Endpoint to delete a rental item by providing its ID.
+ *     parameters:
+ *       - in: path
+ *         name: itemId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: ID of the rental item to be deleted.
+ *     responses:
+ *       200:
+ *         description: Rental item deleted successfully.
+ *       404:
+ *         description: Rental item not found.
+ *       500:
+ *         description: Server error.
+ */
 app.delete('/delete-rental-item/:itemId', async (req, res) => {
   try {
     const itemId = req.params.itemId;
@@ -245,6 +267,7 @@ app.delete('/delete-rental-item/:itemId', async (req, res) => {
     res.status(500).send({ message: 'Server error', error });
   }
 });
+
 
 /**
  * creating new rental item
@@ -430,6 +453,31 @@ app.post("/add-review", verifyToken, async (req, res) => {
   }
 });
 
+// Route to Get Reviews for a Rental Item
+app.get("/reviews/:rentedItemId", async (req, res) => {
+  try {
+    const reviews = await Review.find({
+      rentedItem: req.params.rentedItemId,
+    }).populate("reviewer");
+    res.send(reviews);
+  } catch (error) {
+    res.status(400).send(error);
+  }
+});
+
+// Route to Get Reviews by User ID
+app.get("/reviews", verifyToken, async (req, res) => {
+  try {
+    const reviews = await Review.find({
+      reviewer: req.userId,
+    }).populate("reviewer");
+    res.send(reviews);
+  } catch (error) {
+    res.status(400).send(error);
+  }
+});
+
+
 app.get("/rentedItems", async (req, res) => {
   try {
     const { userId } = req.query;
@@ -542,7 +590,7 @@ app.post("/rental", verifyToken, async (req, res) => {
       productId: req.body.productId,
       trackingnumber: req.body.trackingnumber,
       modifiedBy: req.body.modifiedBy,
-      createdBy: req.body.createdBy, 
+      createdBy: req.body.createdBy,
       ordernumber: ordernumber
     });
     await rental.save();
@@ -553,23 +601,23 @@ app.post("/rental", verifyToken, async (req, res) => {
       ordernumber: ordernumber
     })
 
-    if(transaction.length == 0){
+    if (transaction.length == 0) {
       //create transaction
-      var newTransaction = new transactionSchema({      
-      transactiondate:new Date(),    
-      totalamount:req.body.amount,   
-      ordernumber:ordernumber,      
-      payment_status:"Pending",      
-      rental:rental._id,
-      rentor: product.postedBy
+      var newTransaction = new transactionSchema({
+        transactiondate: new Date(),
+        totalamount: req.body.amount,
+        ordernumber: ordernumber,
+        payment_status: "Pending",
+        rental: rental._id,
+        rentor: product.postedBy
       });
 
       await newTransaction.save();
-    }else{
-      //update transaction    
-      transaction.totalamount = req.body.amount;         
+    } else {
+      //update transaction
+      transaction.totalamount = req.body.amount;
       transaction.rental = rental._id,
-      transaction.rentor = product.postedBy
+        transaction.rentor = product.postedBy
       await transaction.save();
     }
 
@@ -631,38 +679,38 @@ app.post("/rental/cancel", verifyToken, async (req, res) => {
     //get product
     const rentalProduct = await getProductById(rentalItem.productId);
 
-     //get transaction
-     var transaction = await transactionSchema.find({
+    //get transaction
+    var transaction = await transactionSchema.find({
       ordernumber: ordernumber
     })
 
     //calculate rental transaction
 
-    if(transaction.length !== 0){
-        var amountsResults = calculateRentalCost(rentalItem);
-        /*const transactionItem = new transactionSchema({
-          vatamount: amountsResults.vatamount,
-          servicefee: amountsResults.servicefee,
-          duetorentor: amountsResults.duetorentor,
-          renteerefund: amountsResults.renteerefund,
-          transactionDate: currentDate,
-          totalamount: rentalItem.amount,
-          rental: rentalItem._id
-        });*/
+    if (transaction.length !== 0) {
+      var amountsResults = calculateRentalCost(rentalItem);
+      /*const transactionItem = new transactionSchema({
+        vatamount: amountsResults.vatamount,
+        servicefee: amountsResults.servicefee,
+        duetorentor: amountsResults.duetorentor,
+        renteerefund: amountsResults.renteerefund,
+        transactionDate: currentDate,
+        totalamount: rentalItem.amount,
+        rental: rentalItem._id
+      });*/
 
-        
-        //update transaction    
-        transaction.vatamount = amountsResults.vatamount,
+
+      //update transaction
+      transaction.vatamount = amountsResults.vatamount,
         transaction.servicefee = amountsResults.servicefee,
         transaction.duetorentor = amountsResults.duetorentor,
         transaction.renteerefund = amountsResults.renteerefund,
         await transaction.save();
 
-        if(amountsResults.renteerefund > 0){
-          //create refund transaction entry
-          var refundtransactionItem = refundTransaction(transaction);
-          await refundtransactionItem.save();
-        }
+      if (amountsResults.renteerefund > 0) {
+        //create refund transaction entry
+        var refundtransactionItem = refundTransaction(transaction);
+        await refundtransactionItem.save();
+      }
     }
 
     //send cancelation email
@@ -675,7 +723,7 @@ app.post("/rental/cancel", verifyToken, async (req, res) => {
     //console.log("email to :", email);
     var results = await EmailServiceInstace.sendCancelationEmail(email, body, subject);
     console.log("email results", results);
-    
+
     return res.status(200).send({ message: "success", transaction: transaction });
 
   } catch (error) {
@@ -692,17 +740,17 @@ app.post("/rental/cancel", verifyToken, async (req, res) => {
 /**
  * Update: return rental
  */
-app.post("/rental/return",verifyToken,upload.array("photos", 3), async (req,res)=>{
-  try{
+app.post("/rental/return", verifyToken, upload.array("photos", 3), async (req, res) => {
+  try {
     console.log("request ", req.body.photos);
 
     //var response = upload.array("photos", 3)
     const rentalItem = await RentalItem.findByIdAndUpdate(
       { _id: req.body.id },
       {
-        returned:req.body.returned,
-        returnnotes:req.body.notes,
-        returntrackingnumber:req.body.trackingnumber,
+        returned: req.body.returned,
+        returnnotes: req.body.notes,
+        returntrackingnumber: req.body.trackingnumber,
         photosbyrentee: req.body.photos.map((file) => `http://144.126.196.146:3000/uploads/${file.filename}`),
 
       });
@@ -717,31 +765,31 @@ app.post("/rental/return",verifyToken,upload.array("photos", 3), async (req,res)
 
     //calculate rental transaction
 
-    if(transaction.length !== 0){
-        var amountsResults = calculateRentalCost(rentalItem);
-        /*const transactionItem = new transactionSchema({
-          vatamount: amountsResults.vatamount,
-          servicefee: amountsResults.servicefee,
-          duetorentor: amountsResults.duetorentor,
-          renteerefund: amountsResults.renteerefund,
-          transactionDate: currentDate,
-          totalamount: rentalItem.amount,
-          rental: rentalItem._id
-        });*/
+    if (transaction.length !== 0) {
+      var amountsResults = calculateRentalCost(rentalItem);
+      /*const transactionItem = new transactionSchema({
+        vatamount: amountsResults.vatamount,
+        servicefee: amountsResults.servicefee,
+        duetorentor: amountsResults.duetorentor,
+        renteerefund: amountsResults.renteerefund,
+        transactionDate: currentDate,
+        totalamount: rentalItem.amount,
+        rental: rentalItem._id
+      });*/
 
-        
-        //update transaction    
-        transaction.vatamount =amountsResults.vatamount,
+
+      //update transaction
+      transaction.vatamount = amountsResults.vatamount,
         transaction.servicefee = amountsResults.servicefee,
         transaction.duetorentor = amountsResults.duetorentor,
         transaction.renteerefund = amountsResults.renteerefund,
         await transaction.save();
 
-        if(amountsResults.renteerefund > 0){
-          //create refund transaction entry
-          var refundtransactionItem = refundTransaction(transaction);
-          await refundtransactionItem.save();
-        }
+      if (amountsResults.renteerefund > 0) {
+        //create refund transaction entry
+        var refundtransactionItem = refundTransaction(transaction);
+        await refundtransactionItem.save();
+      }
     }
 
     var subject = `Rental no. ${rentalItem._id} Item ${rentalProduct.make} returned`;
@@ -788,9 +836,7 @@ app.get("/rental/getByUserId/:id", verifyToken, async (req, res) => {
   }
 });
 
-/**
- * rentee confirmed receipt of item
- */
+
 app.post(`/rental/receivedByRentee`, verifyToken, async (req, res) => {
 
   console.log("accept item", req.body);
@@ -891,16 +937,16 @@ calculateRentalCost = (item) => {
  * Create refund transaction record
  */
 
-refundTransaction = (transaction) =>{
+refundTransaction = (transaction) => {
   var item = new transactionSchema({
-    vatamount:"0",
+    vatamount: "0",
     servicefee: "0",
     duetorentor: "0",
     renteerefund: transaction.renteerefund,
-    transactiondate:new Date(),    
+    transactiondate: new Date(),
     totalamount: transaction.renteerefund,
-    ordernumber:"refund_" + transaction.ordernumber,    
-    payment_status:"Pending",
+    ordernumber: "refund_" + transaction.ordernumber,
+    payment_status: "Pending",
     rental: transaction.rental,
     rentor: transaction.rentor,
   });
