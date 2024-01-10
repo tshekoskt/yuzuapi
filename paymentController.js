@@ -108,6 +108,7 @@ app.post('/payment/notification',async (req,res)=>{
       amount_gross:payload.amount_gross,
       amount_fee:payload.amount_fee,
       amount_net:payload.amount_net,
+      payfast_payload: payload.toString()
     });
     var newTrans = await newTransaction.save();
     //console.log("newTrans : ", newTrans);

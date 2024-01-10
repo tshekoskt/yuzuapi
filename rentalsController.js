@@ -20,6 +20,10 @@ const EmailService = require('./emailService');
 const EmailServiceInstace = new EmailService();
 const PaymentService = require("./paymentService");
 const paymentService = new PaymentService();
+const fs = require("fs").promises;
+const path = require('path');
+const { Stream } = require("stream");
+const constants = require('./constants');
 
 app.use(cors({
   origin: '*'
@@ -34,6 +38,9 @@ app.use(
     parameterLimit: 50000,
   }),
 );
+
+const serverUrl = "http://144.126.196.146:3000"; // Replace with your server's URL
+//const serverUrl = "http://localhost:3000"; // Replace with your server's URL
 
 const verifyToken = (req, res, next) => {
   const bearerHeader = req.headers["authorization"];
@@ -52,6 +59,21 @@ const verifyToken = (req, res, next) => {
   });
 };
 
+/*
+//for testing return email
+app.get("/testendpoint", async (req,res)=>{
+  var body = await fs.readFile("./emailTemplates/yuzutemplate.html");
+  var data = body.toString();
+  data = data.replace("[User Name]", "Joseph Mdaka")
+  .replace("[Item Name]", "JBL Speaker")
+  .replace("[WebUrl]", constants.WEBSITE + "/")
+  .replace("[ImagePath]", serverUrl);
+  
+  console.log("review email body", data);
+  var results = await EmailServiceInstace.sendReviewHtmlBody("jomdaka@gmail.com", data, "Testing Email");
+  console.log("Email results: ", results);
+  res.send(data);
+});*/
 
 app.post("/add-category", async (req, res) => {
   try {
@@ -94,8 +116,6 @@ const upload = multer({
   storage
 });
 
-const serverUrl = "http://144.126.196.146:3000"; // Replace with your server's URL
-//const serverUrl = "http://localhost:3000"; // Replace with your server's URL
 
 app.post("/post-rental-item-public", upload.array("photos", 5), async (req, res) => {
   try {
@@ -165,13 +185,6 @@ app.patch("/update-rental-item", async (req, res) => {
     res.status(500).send({ message: "Server error", error: error.errors });
   }
 });
-
-
-
-
-const path = require('path');
-const { Stream } = require("stream");
-const constants = require('./constants');
 
 app.get('/get-rental-item-public', async (req, res) => {
   try {
@@ -751,7 +764,7 @@ app.post("/rental/return", verifyToken, upload.array("photos", 3), async (req, r
         returned: req.body.returned,
         returnnotes: req.body.notes,
         returntrackingnumber: req.body.trackingnumber,
-        photosbyrentee: req.body.photos.map((file) => `http://144.126.196.146:3000/uploads/${file.filename}`),
+        photosbyrentee: req.body.photos.map((file) => `${serverUrl}/uploads/${file.filename}`),
 
       });
 
@@ -792,14 +805,26 @@ app.post("/rental/return", verifyToken, upload.array("photos", 3), async (req, r
       }
     }
 
-    var subject = `Rental no. ${rentalItem._id} Item ${rentalProduct.make} returned`;
-    var body = `Rental with reference munber ${rentalItem._id}, for product ${rentalProduct.make}, from date ${rentalItem.startdate} until ${rentalProduct.enddate}
+    var subject = `Rental no. ${rentalItem._id} Item ${rentalProduct.make}`;
+    /*var body = `Rental with reference munber ${rentalItem._id}, for product ${rentalProduct.make}, from date ${rentalItem.startdate} until ${rentalProduct.enddate}
       has been cancel with the following reason:
       ${rentalItem.notes} `;
+*/
+   
     var user = await getUserById(rentalProduct.postedBy);
     var email = user.email;
-    var results = await EmailServiceInstace.sendCancelationEmail(email, body, subject);
-    console.log("email results", results);
+    var body = await fs.readFile("./emailTemplates/yuzutemplate.html");
+    var data = body.toString();
+    data = data.replace("[User Name]", user.name)
+    .replace("[Item Name]", rentalProduct.make)
+    .replace("[WebUrl]", constants.WEBSITE + `/?id=${rentalItem._id}`)
+    .replace("[ImagePath]", `${serverUrl}/${rentalProduct.photos[0]}`);   
+    var results = await EmailServiceInstace.sendReviewHtmlBody(email, data, subject);
+
+    //Also need to send email to Rentor : TODO
+    
+    //var results = await EmailServiceInstace.sendCancelationEmail(email, body, subject);
+    //console.log("email results", results);
     return res.status(200).send({ message: "success", transaction: transaction });
 
   }
