@@ -7,7 +7,8 @@ const randomstring = require("randomstring");
 const mongoose = require("mongoose");
 const multer = require("multer");
 const swaggerUi = require("swagger-ui-express");
-const swaggerJsdoc = require("swagger-jsdoc");
+const swaggerJSDoc = require('swagger-jsdoc');
+const swaggerOptions = require('./swaggerOptions');
 const cors = require("cors");
 const request = require('request');
 const rental = require('./rentalsController');
@@ -15,6 +16,7 @@ const product = require("./productsController");
 const authorization = require("./authController");
 const courier_delivery = require("./deliveryController");
 const payment = require("./paymentController");
+const review = require("./reviewsController");
 //const request = require('request');
 
 //https://www.geeksforgeeks.org/how-to-separate-routers-and-controllers-in-node-js/
@@ -33,6 +35,7 @@ app.use(
 app.use("/uploads", express.static("uploads"));
 app.use(rental);
 app.use(product);
+app.use(review);
 app.use(authorization);
 app.use(courier_delivery);
 app.use(payment);
@@ -54,10 +57,10 @@ const options = {
       url: "http://localhost:3000/",
     },],
   },
-  apis: ["./app.js"],
+  apis: ["./rentalsController.js", "./authController.js", "./productController.js"],
 };
 
-const specs = swaggerJsdoc(options);
+const specs = swaggerJSDoc(options);
 
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
 
@@ -1222,8 +1225,6 @@ app.post("/add-review", verifyToken, async (req, res) => {
     res.status(400).send(error);
   }
 });
-
-
 
 app.listen(3000, () => {
   console.log("Server started on port 3000");
