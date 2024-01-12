@@ -1068,6 +1068,21 @@ app.post(`/rental/receivedByRentor`, verifyToken, async (req, res) => {
       {
         receivedbyrentor: req.body.receivedbyrentor
       });
+
+      const rentalProduct = await getProductById(rentalItem.productId);
+      //send early return email to rentee
+      var subject = `Item Early Return : Rental NO. ${rentalItem._id} Item Name ${rentalProduct.make}`;
+      var user = await getUserById(rentalItem.createdBy);
+      var email = user.email;
+      var body = await fs.readFile("./emailTemplates/torenteeConfirmingReturnTemplate.html");
+      var data = body.toString();
+      data = data.replace("[User Name]", user.name)
+      .replace("[Item Name]", rentalProduct.make)
+      .replace("[Name of the Rental Item]", rentalProduct.make)
+      .replace("[Unique Reference Number]", rentalItem._id)
+      .replace("[SupportEmail]", constants.SUPPORT_EMAIL)
+      .replace("[Date of Return]", currentDate);   
+      await EmailServiceInstace.sendReviewHtmlBody(email, data, subject);
     return res.status(200).send({ message: "success" });
   } catch (error) {
     console.error(error);
