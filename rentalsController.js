@@ -801,7 +801,7 @@ app.post("/rental/cancelByRentor", verifyToken, async (req, res) => {
     //calculate rental transaction
 
     if (transaction.length !== 0) {
-      var amountsResults = calculateRentalCost(rentalItem);
+      var amountsResults = calculateCancellationCost(rentalItem);
       /*const transactionItem = new transactionSchema({
         vatamount: amountsResults.vatamount,
         servicefee: amountsResults.servicefee,
@@ -820,11 +820,11 @@ app.post("/rental/cancelByRentor", verifyToken, async (req, res) => {
         transaction.renteerefund = amountsResults.renteerefund,
         await transaction.save();
 
-      if (amountsResults.renteerefund > 0) {
+      /*if (amountsResults.renteerefund > 0) {
         //create refund transaction entry
         var refundtransactionItem = refundTransaction(transaction);
         await refundtransactionItem.save();
-      }
+      }*/
     }
     //send cancellation email to rentor
      var _subject = `Cancellation : Rental NO. ${rentalItem._id} Item Name ${rentalProduct.make}`;
@@ -840,7 +840,7 @@ app.post("/rental/cancelByRentor", verifyToken, async (req, res) => {
      .replace("[Date of Cancellation]", currentDate);   
      await EmailServiceInstace.sendReviewHtmlBody(_email, _data, _subject);   
 
-    //send cancelation email notification to rentee,  TODO: NJ to provide template
+    //send cancelation email notification to rentee
     /*var subject = `Rental no. ${rentalItem._id} Item ${rentalProduct.make} cancelled`;
     var body = `Rental with reference munber ${rentalItem._id}, for product ${rentalProduct.make}, from date ${rentalItem.startdate} until ${rentalProduct.enddate}
       has been cancelled with the following reason:
@@ -980,7 +980,7 @@ app.post("/rental/return", verifyToken, upload.array("photos", 3), async (req, r
     
     if(!earlyIndicator){
         //Also need to send email to Rentor : TODO - NJ to provie template
-         //send early return email to rentor
+         //send return email to rentor
          var _subject = `Item Return : Rental NO. ${rentalItem._id} Item Name ${rentalProduct.make}`;
          var _user = await getUserById(rentalProduct.postedBy);
          var _email = _user.email;
@@ -1128,6 +1128,17 @@ calculateRentalCost = (item) => {
       */
   var currentDate = new Date();
   return paymentService.earlyRentalReturnRefund(item.startdate, item.enddate, currentDate, item.amount);
+}
+
+/**
+ * Calculatye Cancellation Cost to Rentor.
+ * Rentor is charged a fee
+ * Rentee gents full refund
+ */
+
+calculateCancellationCost = (item) => {
+  var currentDate = new Date();
+  return paymentService.cancellationRentalReturnRefund(item.startdate, item.enddate, currentDate, item.amount);
 }
 
 /**

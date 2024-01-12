@@ -68,6 +68,36 @@ class PaymentService{
         var diff = rentalamount - charge;
   }
 
+  /**
+   * Rentee is entitled to full refund
+   * Rentor is changed 2% fee
+   * @param {} startdate 
+   * @param {*} enddate 
+   * @param {*} datereturned 
+   * @param {*} rentalamount 
+   * @returns 
+   */
+  cancellationRentalReturnRefund(startdate,enddate,datereturned, rentalamount){
+    var totalRentalDays = dateDifferenceInDays(startdate, enddate);
+    var earlyRentalDays = dateDifferenceInDays(startdate, datereturned);
+    
+
+      var serviceFee = percentageAmountCalculator(rentalamount, constants.CANCELLATION_ADMIN_FEE_PERC);
+      var vatAmount =  calculateVAT(serviceFee);       
+      var totalDueToRentor =  - 1 * (vatAmount + serviceFee);
+      var refundAmount = rentalamount;
+
+      var item = {
+        vatAmount: vatAmount,
+        serviceFee: serviceFee,
+        totalDueToRentor : totalDueToRentor,
+        renteeRefund: refundAmount,           
+      }
+    
+      return item;
+   
+}
+
   dateDifferenceInDays(startdt, enddt){     
     var enddate = new Date(enddt);
     var stardate = new Date(startdt);
