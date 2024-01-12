@@ -26,7 +26,7 @@ class PaymentService{
   earlyRentalReturnRefund(startdate,enddate,datereturned, rentalamount){
         var totalRentalDays = dateDifferenceInDays(startdate, enddate);
         var earlyRentalDays = dateDifferenceInDays(startdate, datereturned);
-        if(totalRentalDays > earlyRentalDays) //early return
+        if(totalRentalDays > earlyRentalDays) //early return || cancellation by rentee
         {
           var days_rented = math.abs(totalRentalDays - earlyRentalDays);
           var cost_per_day = rentalamount/totalRentalDays; //charge per day
