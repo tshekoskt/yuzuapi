@@ -271,12 +271,19 @@ app.post('/delivery/createshipment', verifyToken, async (req,res)=>{
         "collection_address": {
           "type": "business",
           "company": companyname,
-          "street_address": rentor.address,
-          "local_area": rentee.city, // "Menlyn",
-          "city": rentee.city,
-          "code": rentee.postalcode,
-          "zone": rentee.province,
-          "country": "ZA"
+         // "street_address": rentor.address,
+         // "local_area": rentor.city, // "Menlyn",
+         // "city": rentor.city,
+         // "code": rentor.postalcode,
+         // "zone": rentor.province,
+         // "country": "ZA"
+          "street_address": "10 Midas Avenue",
+            "local_area": "Olympus AH",
+            "city": "Pretoria",
+            "zone": "Gauteng",
+            "country": "ZA",
+            "code": "0081",
+            "country": "ZA"
         },
         "collection_contact": {
           "name": rentor.name,
@@ -301,9 +308,9 @@ app.post('/delivery/createshipment', verifyToken, async (req,res)=>{
         "parcels": [
           {
             "parcel_description": "Standard flyer",
-            "submitted_length_cm": 0,
-            "submitted_width_cm": 0,
-            "submitted_height_cm": 0,
+            "submitted_length_cm": 2,
+            "submitted_width_cm": 2,
+            "submitted_height_cm": 2,
             "submitted_weight_kg": weight
           }
         ],

@@ -606,7 +606,7 @@ app.post("/rental", verifyToken, async (req, res) => {
       createdBy: req.body.createdBy,
       ordernumber: ordernumber
     });
-    await rental.save();
+    var rentalItem = await rental.save();
     //create a transaction - transaction table
     var product = await RentalProduct.findById(req.body.productId);
 
@@ -621,17 +621,22 @@ app.post("/rental", verifyToken, async (req, res) => {
         totalamount: req.body.amount,
         ordernumber: ordernumber,
         payment_status: "Pending",
-        rental: rental._id,
+        rental: rentalItem._id,
         rentor: product.postedBy
       });
 
       await newTransaction.save();
-    } else {
-      //update transaction
-      transaction.totalamount = req.body.amount;
-      transaction.rental = rental._id,
-        transaction.rentor = product.postedBy
-      await transaction.save();
+    } else {      
+      //update transaction    
+      console.log("transaction : ", transaction); 
+      console.log("rental", rentalItem);     
+      var updateTransaction = await transactionSchema.findByIdAndUpdate(
+        transaction._id,
+        { rental : rentalItem._id,
+         rentor : product.postedBy,
+         totalamount : req.body.amount
+        }
+      );
     }
 
     res.status(201).send({
@@ -686,7 +691,8 @@ app.post("/rental/cancel", verifyToken, async (req, res) => {
       { _id: req.body.id },
       {
         cancelled: req.body.cancelled,
-        notes: req.body.notes
+        notes: req.body.notes,
+        modifieddate: new Date()
       });
 
     //console.log("rental cancel response", rentalItem);
@@ -695,7 +701,7 @@ app.post("/rental/cancel", verifyToken, async (req, res) => {
 
     //get transaction
     var transaction = await transactionSchema.find({
-      ordernumber: ordernumber
+      ordernumber: rentalItem.ordernumber
     })
 
     //calculate rental transaction
@@ -714,22 +720,26 @@ app.post("/rental/cancel", verifyToken, async (req, res) => {
 
 
       //update transaction
-      transaction.vatamount = amountsResults.vatamount,
-        transaction.servicefee = amountsResults.servicefee,
-        transaction.duetorentor = amountsResults.duetorentor,
-        transaction.renteerefund = amountsResults.renteerefund,
-        await transaction.save();
+        await transactionSchema.findByIdAndUpdate(
+          transaction._id,
+          {
+            vatamount: amountsResults.vatamount,
+            servicefee: amountsResults.servicefee,
+            duetorentor: amountsResults.duetorentor,
+            renteerefund: amountsResults.renteerefund
+          }
+        )
 
       if (amountsResults.renteerefund > 0) {
         //create refund transaction entry
-        var refundtransactionItem = refundTransaction(transaction);
-        await refundtransactionItem.save();
+        //var refundtransactionItem = refundTransaction(transaction);
+        //await refundtransactionItem.save();
       }
     }
     //send cancellation email to rentee
      var _subject = `Cancellation : Rental NO. ${rentalItem._id} Item Name ${rentalProduct.make}`;
      var _user = await getUserById(rentalItem.createdBy);
-     var _email = user.email;
+     var _email = "jomdaka@gmail.com"; //_user.email;
      var _body = await fs.readFile("./emailTemplates/renteeCancellationTemplate.html");
      var _data = _body.toString();
      _data = _data.replace("[User Name]", _user.name)
@@ -743,7 +753,7 @@ app.post("/rental/cancel", verifyToken, async (req, res) => {
     //send cancelation email notification to rentor
     var subject = `Rental no. ${rentalItem._id} Item ${rentalProduct.make} cancelled`;
     var user = await getUserById(rentalProduct.postedBy);
-    var email = user.email;
+    var email = "jomdaka@gmail.com"; //user.email;
     var body = await fs.readFile("./emailTemplates/torentorCancellationTemplate.html");
     var data = _body.toString();
     data = data.replace("[User Name]", _user.name)
@@ -788,6 +798,7 @@ app.post("/rental/cancelByRentor", verifyToken, async (req, res) => {
       {
         cancelled: req.body.cancelled,
         notes: req.body.notes,
+        modifieddate: new Date(),
         modifiedBy: rentalProduct.postedBy
       });
 
@@ -795,7 +806,7 @@ app.post("/rental/cancelByRentor", verifyToken, async (req, res) => {
    
     //get transaction
     var transaction = await transactionSchema.find({
-      ordernumber: ordernumber
+      ordernumber: rentalItem.ordernumber
     })
 
     //calculate rental transaction
@@ -814,11 +825,15 @@ app.post("/rental/cancelByRentor", verifyToken, async (req, res) => {
 
 
       //update transaction
-      transaction.vatamount = amountsResults.vatamount,
-        transaction.servicefee = amountsResults.servicefee,
-        transaction.duetorentor = amountsResults.duetorentor,
-        transaction.renteerefund = amountsResults.renteerefund,
-        await transaction.save();
+        await transactionSchema.findByIdAndUpdate(
+          transaction._id,
+          {
+            vatamount: amountsResults.vatamount,
+            servicefee: amountsResults.servicefee,
+            duetorentor: amountsResults.duetorentor,
+            renteerefund: amountsResults.renteerefund
+          }
+        )
 
       /*if (amountsResults.renteerefund > 0) {
         //create refund transaction entry
@@ -829,7 +844,7 @@ app.post("/rental/cancelByRentor", verifyToken, async (req, res) => {
     //send cancellation email to rentor
      var _subject = `Cancellation : Rental NO. ${rentalItem._id} Item Name ${rentalProduct.make}`;
      var _user = await getUserById(rentalProduct.postedBy);
-     var _email = user.email;
+     var _email = "jomdaka@gmail.com"; //_user.email;
      var _body = await fs.readFile("./emailTemplates/rentorCancellationTemplate.html");
      var _data = _body.toString();
      _data = _data.replace("[User Name]", _user.name)
@@ -846,7 +861,7 @@ app.post("/rental/cancelByRentor", verifyToken, async (req, res) => {
       has been cancelled with the following reason:
       ${rentalItem.notes} `;*/
     var user = await getUserById(rentalItem.createdBy);
-    var email = user.email;
+    var email = "jomdaka@gmail.com"; //user.email;
     var body = await fs.readFile("./emailTemplates/torenteeCancellationTemplate.html");
     var data = _body.toString();
     data = data.replace("[User Name]", user.name)
@@ -890,21 +905,24 @@ app.post("/rental/return", verifyToken, upload.array("photos", 3), async (req, r
         returned: req.body.returned,
         returnnotes: req.body.notes,
         returntrackingnumber: req.body.trackingnumber,
-        photosbyrentee: req.body.photos.map((file) => `${serverUrl}/uploads/${file.filename}`),
+        modifieddate: new Date(),
+        photosbyrentee: req.files.map((file) => `${serverUrl}/uploads/${file.filename}`),
 
       });
-
+      
     console.log("rental return response", rentalItem);
     const rentalProduct = await getProductById(rentalItem.productId);
 
     //get transaction
     var transaction = await transactionSchema.find({
-      ordernumber: ordernumber
+      ordernumber: rentalItem.ordernumber
     })
 
+    console.log("transaction is ", transaction);
     //calculate rental transaction
     if (transaction.length !== 0) {
       var amountsResults = calculateRentalCost(rentalItem);
+      console.log("calculateRentalCost : ", amountsResults);
       /*const transactionItem = new transactionSchema({
         vatamount: amountsResults.vatamount,
         servicefee: amountsResults.servicefee,
@@ -916,12 +934,16 @@ app.post("/rental/return", verifyToken, upload.array("photos", 3), async (req, r
       });*/
 
 
-      //update transaction
-      transaction.vatamount = amountsResults.vatamount,
-        transaction.servicefee = amountsResults.servicefee,
-        transaction.duetorentor = amountsResults.duetorentor,
-        transaction.renteerefund = amountsResults.renteerefund,
-        await transaction.save();
+      //update transaction     
+        await transactionSchema.findByIdAndUpdate(
+          transaction._id,
+          {
+            vatamount: amountsResults.vatamount,
+            servicefee: amountsResults.servicefee,
+            duetorentor: amountsResults.duetorentor,
+            renteerefund: amountsResults.renteerefund
+          }
+        )
 
       if (amountsResults.renteerefund > 0) {
         earlyIndicator = true;
@@ -931,7 +953,7 @@ app.post("/rental/return", verifyToken, upload.array("photos", 3), async (req, r
         //send early return email to rentee
         var subject = `Item Early Return : Rental NO. ${rentalItem._id} Item Name ${rentalProduct.make}`;
         var user = await getUserById(rentalItem.createdBy);
-        var email = user.email;
+        var email = "jomdaka@gmail.com"; //user.email;
         var body = await fs.readFile("./emailTemplates/renteeEarlyReturn.html");
         var data = body.toString();
         data = data.replace("[User Name]", user.name)
@@ -945,7 +967,7 @@ app.post("/rental/return", verifyToken, upload.array("photos", 3), async (req, r
         //send early return email to rentor
         var _subject = `Item Early Return : Rental NO. ${rentalItem._id} Item Name ${rentalProduct.make}`;
         var _user = await getUserById(rentalProduct.postedBy);
-        var _email = _user.email;
+        var _email = "jomdaka@gmail.com"; //_user.email;
         var _body = await fs.readFile("./emailTemplates/torentorEarlyReturn.html");
         var _data = _body.toString();
         _data = _data.replace("[User Name]", _user.name)
@@ -968,7 +990,7 @@ app.post("/rental/return", verifyToken, upload.array("photos", 3), async (req, r
   //Review email notification to rentee
     var subject = `Rental no. ${rentalItem._id} Item ${rentalProduct.make}`;
     var user = await getUserById(rentalItem.createdBy);
-    var email = user.email;
+    var email = "jomdaka@gmail.com"; //user.email;
     var body = await fs.readFile("./emailTemplates/yuzutemplate.html");
     var data = body.toString();
     data = data.replace("[User Name]", user.name)
@@ -983,7 +1005,7 @@ app.post("/rental/return", verifyToken, upload.array("photos", 3), async (req, r
          //send return email to rentor
          var _subject = `Item Return : Rental NO. ${rentalItem._id} Item Name ${rentalProduct.make}`;
          var _user = await getUserById(rentalProduct.postedBy);
-         var _email = _user.email;
+         var _email = "jomdaka@gmail.com"; //_user.email;
          var _body = await fs.readFile("./emailTemplates/torentorReturnTemplate.html");
          var _data = _body.toString();
          _data = _data.replace("[User Name]", _user.name)
@@ -1041,7 +1063,8 @@ app.post(`/rental/receivedByRentee`, verifyToken, async (req, res) => {
     const rentalItem = await RentalItem.findByIdAndUpdate(
       { _id: req.body._id },
       {
-        receivedbyrentee: req.body.receivedbyrentee
+        receivedbyrentee: req.body.receivedbyrentee,
+        modifieddate: new Date()
       });
     console.log("rentanl item : ", rentalItem);
     return res.status(200).send({ message: "success" });
@@ -1066,14 +1089,15 @@ app.post(`/rental/receivedByRentor`, verifyToken, async (req, res) => {
     const rentalItem = await RentalItem.findByIdAndUpdate(
       { _id: req.body.id },
       {
-        receivedbyrentor: req.body.receivedbyrentor
+        receivedbyrentor: req.body.receivedbyrentor,
+        modifieddate: new Date()
       });
 
       const rentalProduct = await getProductById(rentalItem.productId);
       //send early return email to rentee
       var subject = `Item Early Return : Rental NO. ${rentalItem._id} Item Name ${rentalProduct.make}`;
       var user = await getUserById(rentalItem.createdBy);
-      var email = user.email;
+      var email = "jomdaka@gmail.com"; //user.email;
       var body = await fs.readFile("./emailTemplates/torenteeConfirmingReturnTemplate.html");
       var data = body.toString();
       data = data.replace("[User Name]", user.name)
