@@ -20,6 +20,10 @@ const EmailService = require('./emailService');
 const EmailServiceInstace = new EmailService();
 const PaymentService = require("./paymentService");
 const paymentService = new PaymentService();
+const fs = require("fs").promises;
+const path = require('path');
+const { Stream } = require("stream");
+const constants = require('./constants');
 
 app.use(cors({
   origin: '*'
@@ -34,6 +38,9 @@ app.use(
     parameterLimit: 50000,
   }),
 );
+
+const serverUrl = "http://144.126.196.146:3000"; // Replace with your server's URL
+//const serverUrl = "http://localhost:3000"; // Replace with your server's URL
 
 const verifyToken = (req, res, next) => {
   const bearerHeader = req.headers["authorization"];
@@ -52,7 +59,22 @@ const verifyToken = (req, res, next) => {
   });
 };
 
-//Look ups
+/*
+//for testing return email
+app.get("/testendpoint", async (req,res)=>{
+  var body = await fs.readFile("./emailTemplates/yuzutemplate.html");
+  var data = body.toString();
+  data = data.replace("[User Name]", "Joseph Mdaka")
+  .replace("[Item Name]", "JBL Speaker")
+  .replace("[WebUrl]", constants.WEBSITE + "/")
+  .replace("[ImagePath]", serverUrl);
+  
+  console.log("review email body", data);
+  var results = await EmailServiceInstace.sendReviewHtmlBody("jomdaka@gmail.com", data, "Testing Email");
+  console.log("Email results: ", results);
+  res.send(data);
+});*/
+
 app.post("/add-category", async (req, res) => {
   try {
     const category = new Category({
@@ -94,8 +116,6 @@ const upload = multer({
   storage
 });
 
-const serverUrl = "http://144.126.196.146:3000"; // Replace with your server's URL
-//const serverUrl = "http://localhost:3000"; // Replace with your server's URL
 
 app.post("/post-rental-item-public", upload.array("photos", 5), async (req, res) => {
   try {
@@ -166,12 +186,6 @@ app.patch("/update-rental-item", async (req, res) => {
   }
 });
 
-
-
-
-const path = require('path');
-const { Stream } = require("stream");
-
 app.get('/get-rental-item-public', async (req, res) => {
   try {
     const userId = req.query.userId;
@@ -225,6 +239,27 @@ app.get('/available-rental-items', async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /delete-rental-item/{itemId}:
+ *   delete:
+ *     summary: Delete a rental item by ID
+ *     description: Endpoint to delete a rental item by providing its ID.
+ *     parameters:
+ *       - in: path
+ *         name: itemId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: ID of the rental item to be deleted.
+ *     responses:
+ *       200:
+ *         description: Rental item deleted successfully.
+ *       404:
+ *         description: Rental item not found.
+ *       500:
+ *         description: Server error.
+ */
 app.delete('/delete-rental-item/:itemId', async (req, res) => {
   try {
     const itemId = req.params.itemId;
@@ -245,6 +280,7 @@ app.delete('/delete-rental-item/:itemId', async (req, res) => {
     res.status(500).send({ message: 'Server error', error });
   }
 });
+
 
 /**
  * creating new rental item
@@ -430,6 +466,31 @@ app.post("/add-review", verifyToken, async (req, res) => {
   }
 });
 
+// Route to Get Reviews for a Rental Item
+app.get("/reviews/:rentedItemId", async (req, res) => {
+  try {
+    const reviews = await Review.find({
+      rentedItem: req.params.rentedItemId,
+    }).populate("reviewer");
+    res.send(reviews);
+  } catch (error) {
+    res.status(400).send(error);
+  }
+});
+
+// Route to Get Reviews by User ID
+app.get("/reviews", verifyToken, async (req, res) => {
+  try {
+    const reviews = await Review.find({
+      reviewer: req.userId,
+    }).populate("reviewer");
+    res.send(reviews);
+  } catch (error) {
+    res.status(400).send(error);
+  }
+});
+
+
 app.get("/rentedItems", async (req, res) => {
   try {
     const { userId } = req.query;
@@ -542,10 +603,10 @@ app.post("/rental", verifyToken, async (req, res) => {
       productId: req.body.productId,
       trackingnumber: req.body.trackingnumber,
       modifiedBy: req.body.modifiedBy,
-      createdBy: req.body.createdBy, 
+      createdBy: req.body.createdBy,
       ordernumber: ordernumber
     });
-    await rental.save();
+    var rentalItem = await rental.save();
     //create a transaction - transaction table
     var product = await RentalProduct.findById(req.body.productId);
 
@@ -553,24 +614,29 @@ app.post("/rental", verifyToken, async (req, res) => {
       ordernumber: ordernumber
     })
 
-    if(transaction.length == 0){
+    if (transaction.length == 0) {
       //create transaction
-      var newTransaction = new transactionSchema({      
-      transactiondate:new Date(),    
-      totalamount:req.body.amount,   
-      ordernumber:ordernumber,      
-      payment_status:"Pending",      
-      rental:rental._id,
-      rentor: product.postedBy
+      var newTransaction = new transactionSchema({
+        transactiondate: new Date(),
+        totalamount: req.body.amount,
+        ordernumber: ordernumber,
+        payment_status: "Pending",
+        rental: rentalItem._id,
+        rentor: product.postedBy
       });
 
       await newTransaction.save();
-    }else{
+    } else {      
       //update transaction    
-      transaction.totalamount = req.body.amount;         
-      transaction.rental = rental._id,
-      transaction.rentor = product.postedBy
-      await transaction.save();
+      console.log("transaction : ", transaction); 
+      console.log("rental", rentalItem);     
+      var updateTransaction = await transactionSchema.findByIdAndUpdate(
+        transaction._id,
+        { rental : rentalItem._id,
+         rentor : product.postedBy,
+         totalamount : req.body.amount
+        }
+      );
     }
 
     res.status(201).send({
@@ -615,67 +681,95 @@ app.get("/rental/:id", verifyToken, async (req, res) => {
 });
 
 /**
- * Update: cancel rental
+ * Update: cancel rental by rentee
  */
 app.post("/rental/cancel", verifyToken, async (req, res) => {
   try {
     //console.log("retrun item request : ", req.body);
+    var currentDate = new Date();
     const rentalItem = await RentalItem.findByIdAndUpdate(
       { _id: req.body.id },
       {
         cancelled: req.body.cancelled,
-        notes: req.body.notes
+        notes: req.body.notes,
+        modifieddate: new Date()
       });
 
     //console.log("rental cancel response", rentalItem);
     //get product
     const rentalProduct = await getProductById(rentalItem.productId);
 
-     //get transaction
-     var transaction = await transactionSchema.find({
-      ordernumber: ordernumber
+    //get transaction
+    var transaction = await transactionSchema.find({
+      ordernumber: rentalItem.ordernumber
     })
 
     //calculate rental transaction
 
-    if(transaction.length !== 0){
-        var amountsResults = calculateRentalCost(rentalItem);
-        /*const transactionItem = new transactionSchema({
-          vatamount: amountsResults.vatamount,
-          servicefee: amountsResults.servicefee,
-          duetorentor: amountsResults.duetorentor,
-          renteerefund: amountsResults.renteerefund,
-          transactionDate: currentDate,
-          totalamount: rentalItem.amount,
-          rental: rentalItem._id
-        });*/
+    if (transaction.length !== 0) {
+      var amountsResults = calculateRentalCost(rentalItem);
+      /*const transactionItem = new transactionSchema({
+        vatamount: amountsResults.vatamount,
+        servicefee: amountsResults.servicefee,
+        duetorentor: amountsResults.duetorentor,
+        renteerefund: amountsResults.renteerefund,
+        transactionDate: currentDate,
+        totalamount: rentalItem.amount,
+        rental: rentalItem._id
+      });*/
 
-        
-        //update transaction    
-        transaction.vatamount = amountsResults.vatamount,
-        transaction.servicefee = amountsResults.servicefee,
-        transaction.duetorentor = amountsResults.duetorentor,
-        transaction.renteerefund = amountsResults.renteerefund,
-        await transaction.save();
 
-        if(amountsResults.renteerefund > 0){
-          //create refund transaction entry
-          var refundtransactionItem = refundTransaction(transaction);
-          await refundtransactionItem.save();
-        }
+      //update transaction
+        await transactionSchema.findByIdAndUpdate(
+          transaction._id,
+          {
+            vatamount: amountsResults.vatamount,
+            servicefee: amountsResults.servicefee,
+            duetorentor: amountsResults.duetorentor,
+            renteerefund: amountsResults.renteerefund
+          }
+        )
+
+      if (amountsResults.renteerefund > 0) {
+        //create refund transaction entry
+        //var refundtransactionItem = refundTransaction(transaction);
+        //await refundtransactionItem.save();
+      }
     }
+    //send cancellation email to rentee
+     var _subject = `Cancellation : Rental NO. ${rentalItem._id} Item Name ${rentalProduct.make}`;
+     var _user = await getUserById(rentalItem.createdBy);
+     var _email = "jomdaka@gmail.com"; //_user.email;
+     var _body = await fs.readFile("./emailTemplates/renteeCancellationTemplate.html");
+     var _data = _body.toString();
+     _data = _data.replace("[User Name]", _user.name)
+     .replace("[Item Name]", rentalProduct.make)
+     .replace("[Name of the Rental Item]", rentalProduct.make)
+     .replace("[Unique Reference Number]", rentalItem._id)
+     .replace("[SupportEmail]", constants.SUPPORT_EMAIL)
+     .replace("[Date of Cancellation]", currentDate);   
+     await EmailServiceInstace.sendReviewHtmlBody(_email, _data, _subject);   
 
-    //send cancelation email
+    //send cancelation email notification to rentor
     var subject = `Rental no. ${rentalItem._id} Item ${rentalProduct.make} cancelled`;
-    var body = `Rental with reference munber ${rentalItem._id}, for product ${rentalProduct.make}, from date ${rentalItem.startdate} until ${rentalProduct.enddate}
-      has been cancel with the following reason:
-      ${rentalItem.notes} `;
     var user = await getUserById(rentalProduct.postedBy);
-    var email = user.email;
-    //console.log("email to :", email);
+    var email = "jomdaka@gmail.com"; //user.email;
+    var body = await fs.readFile("./emailTemplates/torentorCancellationTemplate.html");
+    var data = _body.toString();
+    data = data.replace("[User Name]", _user.name)
+    .replace("[Item Name]", rentalProduct.make)
+    .replace("[Name of the Rental Item]", rentalProduct.make)
+    .replace("[Unique Reference Number]", rentalItem._id)
+    .replace("[SupportEmail]", constants.SUPPORT_EMAIL)
+    .replace("[Date of Cancellation]", currentDate);   
+    await EmailServiceInstace.sendReviewHtmlBody(email, data, subject);  
+   
+    /*var body = `Rental with reference munber ${rentalItem._id}, for product ${rentalProduct.make}, from date ${rentalItem.startdate} until ${rentalProduct.enddate}
+      has been cancelled with the following reason:
+      ${rentalItem.notes} `;
     var results = await EmailServiceInstace.sendCancelationEmail(email, body, subject);
-    console.log("email results", results);
-    
+    console.log("email results", results);*/
+
     return res.status(200).send({ message: "success", transaction: transaction });
 
   } catch (error) {
@@ -690,68 +784,241 @@ app.post("/rental/cancel", verifyToken, async (req, res) => {
 });
 
 /**
+ * Update: cancel rental by rentor
+ */
+app.post("/rental/cancelByRentor", verifyToken, async (req, res) => {
+  try {
+    //console.log("retrun item request : ", req.body);
+     //get product
+     const rentalProduct = await getProductById(rentalItem.productId);
+
+    var currentDate = new Date();
+    const rentalItem = await RentalItem.findByIdAndUpdate(
+      { _id: req.body.id },
+      {
+        cancelled: req.body.cancelled,
+        notes: req.body.notes,
+        modifieddate: new Date(),
+        modifiedBy: rentalProduct.postedBy
+      });
+
+    //console.log("rental cancel response", rentalItem);
+   
+    //get transaction
+    var transaction = await transactionSchema.find({
+      ordernumber: rentalItem.ordernumber
+    })
+
+    //calculate rental transaction
+
+    if (transaction.length !== 0) {
+      var amountsResults = calculateCancellationCost(rentalItem);
+      /*const transactionItem = new transactionSchema({
+        vatamount: amountsResults.vatamount,
+        servicefee: amountsResults.servicefee,
+        duetorentor: amountsResults.duetorentor,
+        renteerefund: amountsResults.renteerefund,
+        transactionDate: currentDate,
+        totalamount: rentalItem.amount,
+        rental: rentalItem._id
+      });*/
+
+
+      //update transaction
+        await transactionSchema.findByIdAndUpdate(
+          transaction._id,
+          {
+            vatamount: amountsResults.vatamount,
+            servicefee: amountsResults.servicefee,
+            duetorentor: amountsResults.duetorentor,
+            renteerefund: amountsResults.renteerefund
+          }
+        )
+
+      /*if (amountsResults.renteerefund > 0) {
+        //create refund transaction entry
+        var refundtransactionItem = refundTransaction(transaction);
+        await refundtransactionItem.save();
+      }*/
+    }
+    //send cancellation email to rentor
+     var _subject = `Cancellation : Rental NO. ${rentalItem._id} Item Name ${rentalProduct.make}`;
+     var _user = await getUserById(rentalProduct.postedBy);
+     var _email = "jomdaka@gmail.com"; //_user.email;
+     var _body = await fs.readFile("./emailTemplates/rentorCancellationTemplate.html");
+     var _data = _body.toString();
+     _data = _data.replace("[User Name]", _user.name)
+     .replace("[Item Name]", rentalProduct.make)
+     .replace("[Name of the Rental Item]", rentalProduct.make)
+     .replace("[Unique Reference Number]", rentalItem._id)
+     .replace("[SupportEmail]", constants.SUPPORT_EMAIL)
+     .replace("[Date of Cancellation]", currentDate);   
+     await EmailServiceInstace.sendReviewHtmlBody(_email, _data, _subject);   
+
+    //send cancelation email notification to rentee
+    /*var subject = `Rental no. ${rentalItem._id} Item ${rentalProduct.make} cancelled`;
+    var body = `Rental with reference munber ${rentalItem._id}, for product ${rentalProduct.make}, from date ${rentalItem.startdate} until ${rentalProduct.enddate}
+      has been cancelled with the following reason:
+      ${rentalItem.notes} `;*/
+    var user = await getUserById(rentalItem.createdBy);
+    var email = "jomdaka@gmail.com"; //user.email;
+    var body = await fs.readFile("./emailTemplates/torenteeCancellationTemplate.html");
+    var data = _body.toString();
+    data = data.replace("[User Name]", user.name)
+     .replace("[Item Name]", rentalProduct.make)
+     .replace("[Name of the Rental Item]", rentalProduct.make)
+     .replace("[Unique Reference Number]", rentalItem._id)
+     .replace("[SupportEmail]", constants.SUPPORT_EMAIL)
+     .replace("[Date of Cancellation]", currentDate);   
+    await EmailServiceInstace.sendReviewHtmlBody(email, data, subject);     
+    //console.log("email to :", email);
+    var results = await EmailServiceInstace.sendCancelationEmail(email, body, subject);
+    console.log("email results", results);
+
+    return res.status(200).send({ message: "success", transaction: transaction });
+
+  } catch (error) {
+    console.error(error);
+    if (error instanceof mongoose.Error.ValidationError) {
+      res.status(400).send({ message: "Validation error", errors: error.errors });
+    } else {
+      res.status(500).send({ message: "Server error", error: error.errors });
+      console.log("error message", error);
+    }
+  }
+});
+
+
+/**
  * Update: return rental
  */
-app.post("/rental/return",verifyToken,upload.array("photos", 3), async (req,res)=>{
-  try{
+app.post("/rental/return", verifyToken, upload.array("photos", 3), async (req, res) => {
+  try {
     console.log("request ", req.body.photos);
 
+    var currentDate = new Date();
+    var earlyIndicator = false;
     //var response = upload.array("photos", 3)
     const rentalItem = await RentalItem.findByIdAndUpdate(
       { _id: req.body.id },
       {
-        returned:req.body.returned,
-        returnnotes:req.body.notes,
-        returntrackingnumber:req.body.trackingnumber,
-        photosbyrentee: req.body.photos.map((file) => `http://144.126.196.146:3000/uploads/${file.filename}`),
+        returned: req.body.returned,
+        returnnotes: req.body.notes,
+        returntrackingnumber: req.body.trackingnumber,
+        modifieddate: new Date(),
+        photosbyrentee: req.files.map((file) => `${serverUrl}/uploads/${file.filename}`),
 
       });
-
+      
     console.log("rental return response", rentalItem);
     const rentalProduct = await getProductById(rentalItem.productId);
 
     //get transaction
     var transaction = await transactionSchema.find({
-      ordernumber: ordernumber
+      ordernumber: rentalItem.ordernumber
     })
 
+    console.log("transaction is ", transaction);
     //calculate rental transaction
+    if (transaction.length !== 0) {
+      var amountsResults = calculateRentalCost(rentalItem);
+      console.log("calculateRentalCost : ", amountsResults);
+      /*const transactionItem = new transactionSchema({
+        vatamount: amountsResults.vatamount,
+        servicefee: amountsResults.servicefee,
+        duetorentor: amountsResults.duetorentor,
+        renteerefund: amountsResults.renteerefund,
+        transactionDate: currentDate,
+        totalamount: rentalItem.amount,
+        rental: rentalItem._id
+      });*/
 
-    if(transaction.length !== 0){
-        var amountsResults = calculateRentalCost(rentalItem);
-        /*const transactionItem = new transactionSchema({
-          vatamount: amountsResults.vatamount,
-          servicefee: amountsResults.servicefee,
-          duetorentor: amountsResults.duetorentor,
-          renteerefund: amountsResults.renteerefund,
-          transactionDate: currentDate,
-          totalamount: rentalItem.amount,
-          rental: rentalItem._id
-        });*/
 
+      //update transaction     
+        await transactionSchema.findByIdAndUpdate(
+          transaction._id,
+          {
+            vatamount: amountsResults.vatamount,
+            servicefee: amountsResults.servicefee,
+            duetorentor: amountsResults.duetorentor,
+            renteerefund: amountsResults.renteerefund
+          }
+        )
+
+      if (amountsResults.renteerefund > 0) {
+        earlyIndicator = true;
+        //create refund transaction entry        
+        var refundtransactionItem = refundTransaction(transaction);
+        await refundtransactionItem.save();
+        //send early return email to rentee
+        var subject = `Item Early Return : Rental NO. ${rentalItem._id} Item Name ${rentalProduct.make}`;
+        var user = await getUserById(rentalItem.createdBy);
+        var email = "jomdaka@gmail.com"; //user.email;
+        var body = await fs.readFile("./emailTemplates/renteeEarlyReturn.html");
+        var data = body.toString();
+        data = data.replace("[User Name]", user.name)
+        .replace("[Item Name]", rentalProduct.make)
+        .replace("[Name of the Rental Item]", rentalProduct.make)
+        .replace("[Unique Reference Number]", rentalItem._id)
+        .replace("[SupportEmail]", constants.SUPPORT_EMAIL)
+        .replace("[Date of Early Return]", currentDate);   
+        await EmailServiceInstace.sendReviewHtmlBody(email, data, subject);
+
+        //send early return email to rentor
+        var _subject = `Item Early Return : Rental NO. ${rentalItem._id} Item Name ${rentalProduct.make}`;
+        var _user = await getUserById(rentalProduct.postedBy);
+        var _email = "jomdaka@gmail.com"; //_user.email;
+        var _body = await fs.readFile("./emailTemplates/torentorEarlyReturn.html");
+        var _data = _body.toString();
+        _data = _data.replace("[User Name]", _user.name)
+        .replace("[Item Name]", rentalProduct.make)
+        .replace("[Name of the Rental Item]", rentalProduct.make)
+        .replace("[Unique Reference Number]", rentalItem._id)
+        .replace("[SupportEmail]", constants.SUPPORT_EMAIL)
+        .replace("[Date of Early Return]", currentDate);   
+        await EmailServiceInstace.sendReviewHtmlBody(_email, _data, _subject);
         
-        //update transaction    
-        transaction.vatamount =amountsResults.vatamount,
-        transaction.servicefee = amountsResults.servicefee,
-        transaction.duetorentor = amountsResults.duetorentor,
-        transaction.renteerefund = amountsResults.renteerefund,
-        await transaction.save();
-
-        if(amountsResults.renteerefund > 0){
-          //create refund transaction entry
-          var refundtransactionItem = refundTransaction(transaction);
-          await refundtransactionItem.save();
-        }
+      }
     }
 
-    var subject = `Rental no. ${rentalItem._id} Item ${rentalProduct.make} returned`;
-    var body = `Rental with reference munber ${rentalItem._id}, for product ${rentalProduct.make}, from date ${rentalItem.startdate} until ${rentalProduct.enddate}
+    
+    /*var body = `Rental with reference munber ${rentalItem._id}, for product ${rentalProduct.make}, from date ${rentalItem.startdate} until ${rentalProduct.enddate}
       has been cancel with the following reason:
       ${rentalItem.notes} `;
-    var user = await getUserById(rentalProduct.postedBy);
-    var email = user.email;
-    var results = await EmailServiceInstace.sendCancelationEmail(email, body, subject);
-    console.log("email results", results);
+*/
+   
+  //Review email notification to rentee
+    var subject = `Rental no. ${rentalItem._id} Item ${rentalProduct.make}`;
+    var user = await getUserById(rentalItem.createdBy);
+    var email = "jomdaka@gmail.com"; //user.email;
+    var body = await fs.readFile("./emailTemplates/yuzutemplate.html");
+    var data = body.toString();
+    data = data.replace("[User Name]", user.name)
+    .replace("[Item Name]", rentalProduct.make)
+    .replace("[WebUrl]", constants.WEBSITE + `/?id=${rentalItem._id}`)
+    .replace("[ImagePath]", `${serverUrl}/${rentalProduct.photos[0]}`);   
+    var results = await EmailServiceInstace.sendReviewHtmlBody(email, data, subject);
+
+    
+    if(!earlyIndicator){
+        //Also need to send email to Rentor : TODO - NJ to provie template
+         //send return email to rentor
+         var _subject = `Item Return : Rental NO. ${rentalItem._id} Item Name ${rentalProduct.make}`;
+         var _user = await getUserById(rentalProduct.postedBy);
+         var _email = "jomdaka@gmail.com"; //_user.email;
+         var _body = await fs.readFile("./emailTemplates/torentorReturnTemplate.html");
+         var _data = _body.toString();
+         _data = _data.replace("[User Name]", _user.name)
+         .replace("[Item Name]", rentalProduct.make)
+         .replace("[Name of the Rental Item]", rentalProduct.make)
+         .replace("[Unique Reference Number]", rentalItem._id)
+         .replace("[SupportEmail]", constants.SUPPORT_EMAIL)
+         .replace("[Date of Return]", currentDate);   
+         await EmailServiceInstace.sendReviewHtmlBody(_email, _data, _subject);
+    }
+    
+    //var results = await EmailServiceInstace.sendCancelationEmail(email, body, subject);
+    //console.log("email results", results);
     return res.status(200).send({ message: "success", transaction: transaction });
 
   }
@@ -788,9 +1055,7 @@ app.get("/rental/getByUserId/:id", verifyToken, async (req, res) => {
   }
 });
 
-/**
- * rentee confirmed receipt of item
- */
+
 app.post(`/rental/receivedByRentee`, verifyToken, async (req, res) => {
 
   console.log("accept item", req.body);
@@ -798,7 +1063,8 @@ app.post(`/rental/receivedByRentee`, verifyToken, async (req, res) => {
     const rentalItem = await RentalItem.findByIdAndUpdate(
       { _id: req.body._id },
       {
-        receivedbyrentee: req.body.receivedbyrentee
+        receivedbyrentee: req.body.receivedbyrentee,
+        modifieddate: new Date()
       });
     console.log("rentanl item : ", rentalItem);
     return res.status(200).send({ message: "success" });
@@ -823,8 +1089,24 @@ app.post(`/rental/receivedByRentor`, verifyToken, async (req, res) => {
     const rentalItem = await RentalItem.findByIdAndUpdate(
       { _id: req.body.id },
       {
-        receivedbyrentor: req.body.receivedbyrentor
+        receivedbyrentor: req.body.receivedbyrentor,
+        modifieddate: new Date()
       });
+
+      const rentalProduct = await getProductById(rentalItem.productId);
+      //send early return email to rentee
+      var subject = `Item Early Return : Rental NO. ${rentalItem._id} Item Name ${rentalProduct.make}`;
+      var user = await getUserById(rentalItem.createdBy);
+      var email = "jomdaka@gmail.com"; //user.email;
+      var body = await fs.readFile("./emailTemplates/torenteeConfirmingReturnTemplate.html");
+      var data = body.toString();
+      data = data.replace("[User Name]", user.name)
+      .replace("[Item Name]", rentalProduct.make)
+      .replace("[Name of the Rental Item]", rentalProduct.make)
+      .replace("[Unique Reference Number]", rentalItem._id)
+      .replace("[SupportEmail]", constants.SUPPORT_EMAIL)
+      .replace("[Date of Return]", currentDate);   
+      await EmailServiceInstace.sendReviewHtmlBody(email, data, subject);
     return res.status(200).send({ message: "success" });
   } catch (error) {
     console.error(error);
@@ -884,23 +1166,34 @@ calculateRentalCost = (item) => {
       * calculate rental costs
       */
   var currentDate = new Date();
-  return earlyRentalReturnRefund(item.startdate, item.enddate, currentDate, item.amount);
+  return paymentService.earlyRentalReturnRefund(item.startdate, item.enddate, currentDate, item.amount);
+}
+
+/**
+ * Calculatye Cancellation Cost to Rentor.
+ * Rentor is charged a fee
+ * Rentee gents full refund
+ */
+
+calculateCancellationCost = (item) => {
+  var currentDate = new Date();
+  return paymentService.cancellationRentalReturnRefund(item.startdate, item.enddate, currentDate, item.amount);
 }
 
 /**
  * Create refund transaction record
  */
 
-refundTransaction = (transaction) =>{
+refundTransaction = (transaction) => {
   var item = new transactionSchema({
-    vatamount:"0",
+    vatamount: "0",
     servicefee: "0",
     duetorentor: "0",
     renteerefund: transaction.renteerefund,
-    transactiondate:new Date(),    
+    transactiondate: new Date(),
     totalamount: transaction.renteerefund,
-    ordernumber:"refund_" + transaction.ordernumber,    
-    payment_status:"Pending",
+    ordernumber: "refund_" + transaction.ordernumber,
+    payment_status: "Pending",
     rental: transaction.rental,
     rentor: transaction.rentor,
   });

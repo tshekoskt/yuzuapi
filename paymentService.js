@@ -1,7 +1,7 @@
 const constants = require("./constants");
 const math = require('math');
 
-class PaymentService{
+class PaymentService {
 
     /**
    * Helper methods
@@ -11,7 +11,7 @@ class PaymentService{
   }
 
   calculateVAT(amount){
-    return percentageAmountCalculator(amount, constants.VAT);
+    return this.percentageAmountCalculator(amount, constants.VAT);
   }
 
   /**
@@ -24,9 +24,9 @@ class PaymentService{
    * @returns 
    */
   earlyRentalReturnRefund(startdate,enddate,datereturned, rentalamount){
-        var totalRentalDays = dateDifferenceInDays(startdate, enddate);
-        var earlyRentalDays = dateDifferenceInDays(startdate, datereturned);
-        if(totalRentalDays > earlyRentalDays) //early return
+        var totalRentalDays = this.dateDifferenceInDays(startdate, enddate);
+        var earlyRentalDays = this.dateDifferenceInDays(startdate, datereturned);
+        if(totalRentalDays > earlyRentalDays) //early return || cancellation by rentee
         {
           var days_rented = math.abs(totalRentalDays - earlyRentalDays);
           var cost_per_day = rentalamount/totalRentalDays; //charge per day
@@ -34,9 +34,9 @@ class PaymentService{
           var cost_for_remaining_days = cost_per_day * earlyRentalDays;
           var dueToRentor = cost_for_days_in_use + refundAmount;
 
-          var serviceFee = percentageAmountCalculator(dueToRentor, constants.SERVICE_FEE_PERC);
-          var vatAmount =  calculateVAT(serviceFee);
-          var refundAmount = percentageAmountCalculator(cost_for_remaining_days, 50); //50%         
+          var serviceFee = this.percentageAmountCalculator(dueToRentor, constants.SERVICE_FEE_PERC);
+          var vatAmount =  this.calculateVAT(serviceFee);
+          var refundAmount = this.percentageAmountCalculator(cost_for_remaining_days, 50); //50%         
           var totalDueToRentor = dueToRentor - vatAmount - serviceFee;
 
           var item = {
@@ -49,8 +49,8 @@ class PaymentService{
           return item;
         }else{
 
-          var serviceFee = percentageAmountCalculator(rentalamount, constants.SERVICE_FEE_PERC);
-          var vatAmount =  calculateVAT(serviceFee);       
+          var serviceFee = this.percentageAmountCalculator(rentalamount, constants.SERVICE_FEE_PERC);
+          var vatAmount =  this.calculateVAT(serviceFee);       
           var totalDueToRentor = rentalamount - vatAmount - serviceFee;
           var refundAmount = 0
 
@@ -68,7 +68,37 @@ class PaymentService{
         var diff = rentalamount - charge;
   }
 
-  dateDifferenceInDays(startdt, enddt){     
+  /**
+   * Rentee is entitled to full refund
+   * Rentor is changed 2% fee
+   * @param {} startdate 
+   * @param {*} enddate 
+   * @param {*} datereturned 
+   * @param {*} rentalamount 
+   * @returns 
+   */
+  cancellationRentalReturnRefund(startdate,enddate,datereturned, rentalamount){
+    var totalRentalDays = this.dateDifferenceInDays(startdate, enddate);
+    var earlyRentalDays = this.dateDifferenceInDays(startdate, datereturned);
+    
+
+      var serviceFee = this.percentageAmountCalculator(rentalamount, constants.CANCELLATION_ADMIN_FEE_PERC);
+      var vatAmount =  this.calculateVAT(serviceFee);       
+      var totalDueToRentor =  - 1 * (vatAmount + serviceFee);
+      var refundAmount = rentalamount;
+
+      var item = {
+        vatAmount: vatAmount,
+        serviceFee: serviceFee,
+        totalDueToRentor : totalDueToRentor,
+        renteeRefund: refundAmount,           
+      }
+    
+      return item;
+   
+}
+
+ dateDifferenceInDays(startdt, enddt){     
     var enddate = new Date(enddt);
     var stardate = new Date(startdt);
     var utcEnd = Date.UTC(enddate.getFullYear(), enddate.getMonth(), enddate.getDate()) 
@@ -83,4 +113,5 @@ class PaymentService{
 
   }
 }
+
 module.exports = PaymentService

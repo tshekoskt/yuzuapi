@@ -1,5 +1,14 @@
 const mongoose = require('mongoose');
 
+const reviewSchema = new mongoose.Schema({
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+  },
+  text: String,
+  // You can add more properties like date, rating, etc. based on your requirements
+});
+
 const rentalProductSchema = new mongoose.Schema({
   make: String,
   model: String,
@@ -14,10 +23,11 @@ const rentalProductSchema = new mongoose.Schema({
   available: Boolean,
   isRented: Boolean,
   startdate: Date,
+  reviewComments: [reviewSchema], // Modified to use reviewSchema
   enddate: Date,
   photos: [String],
   pictures: [String],
-  weight:String,
+  weight: String,
   category: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Category",
@@ -32,8 +42,8 @@ const rentalProductSchema = new mongoose.Schema({
   },
   deliveryoption: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "DeliveryOption"
-  }
+    ref: "DeliveryOption",
+  },
 });
 
 module.exports = mongoose.model('RentalProducts', rentalProductSchema);
