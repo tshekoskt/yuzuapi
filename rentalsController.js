@@ -39,8 +39,8 @@ app.use(
   }),
 );
 
-//const serverUrl = "http://144.126.196.146:3000"; // Replace with your server's URL
-const serverUrl = "http://localhost:3000"; // Replace with your server's URL
+const serverUrl = "http://144.126.196.146:3000"; // Replace with your server's URL
+//const serverUrl = "http://localhost:3000"; // Replace with your server's URL
 
 const verifyToken = (req, res, next) => {
   const bearerHeader = req.headers["authorization"];
