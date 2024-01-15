@@ -11,6 +11,8 @@ const swaggerJSDoc = require('swagger-jsdoc');
 const swaggerOptions = require('./swaggerOptions');
 const cors = require("cors");
 const request = require('request');
+
+
 const rental = require('./rentalsController');
 const product = require("./productsController");
 const authorization = require("./authController");
@@ -21,7 +23,7 @@ const review = require("./reviewsController");
 
 //https://www.geeksforgeeks.org/how-to-separate-routers-and-controllers-in-node-js/
 const app = express();
-//app.use(bodyParser.json());
+
 app.use(bodyParser.json({ limit: '35mb' }));
 
 app.use(
@@ -177,10 +179,15 @@ const rentalProductSchema = new mongoose.Schema({
 
 
 const chatSchema = new mongoose.Schema({
-  username: String,
+  productId: String,
   message: String,
   seen: Boolean,
-  oderByDate: Date,
+  replyText: String,
+  parentId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Chat",
+  },
+  postedDate: Date,
   postedBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
@@ -294,10 +301,6 @@ app.post("/add-delivery-option", async (req, res) => {
     res.status(400).send(error);
   }
 });
-
-
-
-
 
 
 app.post('/register', async (req, res) => {
@@ -440,8 +443,6 @@ app.post('/register', async (req, res) => {
 });
 
 
-
-
 /*app.patch("/update-profile", async (req, res) => {
   try {
 
@@ -515,8 +516,6 @@ app.post("/validate-otp", async (req, res) => {
 
 //Route to forgot password using email password
 //const request = require('request');
-
-
 
 app.post("/forgot-password", async (req, res) => {
   try {
@@ -681,8 +680,6 @@ app.get('/getadminuser', async (req, res) => {
     });
   }
 });
-
-
 
 
 //Route to logout
@@ -993,9 +990,6 @@ app.get("/rentals", async (req, res) => {
 });
 
 
-
-
-
 // Route to Rent an Item
 app.post("/rent-item", verifyToken, async (req, res) => {
   try {
@@ -1102,11 +1096,14 @@ const Chat = mongoose.model('Chat', chatSchema);
 app.post('/chats', async (req, res) => {
   try {
     // Create a new chat message based on the request body
+    console.log(req.body)
     const newChat = new Chat({
-      username: req.body.username,
+      productId:req.body.productId,
       message: req.body.message,
       seen: req.body.seen,
-      orderByDate: req.body.orderByDate,
+      replyText: req.body.replyText,
+      parentId:req.body.parentId,
+      postedDate: req.body.postedDate,
       postedBy: req.body.postedBy, // You should provide a valid user ObjectId here
     });
 
@@ -1114,7 +1111,7 @@ app.post('/chats', async (req, res) => {
     const savedChat = await newChat.save();
     res.status(201).json(savedChat);
   } catch (error) {
-    res.status(500).json({ error: 'An error occurred while saving the chat message.' });
+    res.status(500).json({ error: 'An error occurred while saving the chat message.' + error });
   }
 });
 
@@ -1122,7 +1119,7 @@ app.post('/chats', async (req, res) => {
 app.get('/chats', async (req, res) => {
   try {
     // Fetch all chat messages from the database
-    const chats = await Chat.find();
+    const chats = await Chat.find().populate("postedBy").populate("parentId");
     res.status(200).json(chats);
   } catch (error) {
     res.status(500).json({ error: 'An error occurred while fetching chat messages.' });
@@ -1133,7 +1130,7 @@ app.get('/chats', async (req, res) => {
 app.get('/chats/:chatId', async (req, res) => {
   try {
     // Fetch a chat message by its ID from the database
-    const chat = await Chat.findById(req.params.chatId);
+    const chat = await Chat.findById(req.params.chatId).populate("postedBy").populate("parentId");
 
     if (!chat) {
       return res.status(404).json({ error: 'Chat message not found.' });
@@ -1144,6 +1141,68 @@ app.get('/chats/:chatId', async (req, res) => {
     res.status(500).json({ error: 'An error occurred while fetching the chat message.' });
   }
 });
+
+// GET endpoint to retrieve a chat message by ID
+app.get('/chatsbyuser/:userId', async (req, res) => {
+  try {
+    // Fetch a chat message by its ID from the database
+    const chats = await Chat.find({postedBy:req.params.userId,parentId: null}).populate("postedBy");
+
+    if (!chats) {
+      return res.status(404).json({ error: 'Chat message not found.' });
+    }
+
+    // Now, for each top-level chat, find and attach its replies
+    const chatsWithReplies = await Promise.all(
+      chats.map(async (chat) => {
+        
+        const replies = await Chat.find({ parentId: chat._id }).populate("postedBy");
+
+        console.log(chat._id);
+
+        return {
+          ...chat.toObject(), // Convert Mongoose document to plain object replies
+          replies
+        };
+      })
+    );
+
+    res.status(200).json(chatsWithReplies);
+  } catch (error) {
+    res.status(500).json({ error: 'An error occurred while fetching the chat message.' });
+  }
+});
+
+app.get('/chatsbyproduct/:productId', async (req, res) => {
+  try {
+    // Fetch a chat message by its ID from the database
+    const chats = await Chat.find({productId:req.params.productId}).populate("postedBy");
+
+    if (!chats) {
+      return res.status(404).json({ error: 'Chat message not found.' });
+    }
+
+    // Now, for each top-level chat, find and attach its replies
+    const chatsWithReplies = await Promise.all(
+      chats.map(async (chat) => {
+        
+        const replies = await Chat.find({ parentId: chat._id }).populate("postedBy");
+
+        console.log(chat._id);
+
+        return {
+          ...chat.toObject(), // Convert Mongoose document to plain object replies
+          replies
+        };
+      })
+    );
+
+    res.status(200).json(chatsWithReplies);
+  } catch (error) {
+    res.status(500).json({ error: 'An error occurred while fetching the chat message.' });
+  }
+});
+
 
 
 //const Chat = mongoose.model('Chat', chatSchema);
