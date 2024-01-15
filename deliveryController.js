@@ -348,6 +348,110 @@ app.post('/delivery/createshipment', verifyToken, async (req,res)=>{
 })
 
 /**
+ * create shipment
+*/
+app.post('/delivery/returnshipment', verifyToken, async (req,res)=>{
+
+  //get product details
+  //console.log("req.body.productId : ", req.body.productId);
+  var product = await getProductById(req.body.productId);
+  //console.log("product is ", product);
+  //Get rentee details
+  var rentee = await getUserById(req.body.createdBy);
+  //console.log("rentee is ", rentee);
+  //Get rentor details
+  var rentor = await getUserById(product.postedBy);
+  //console.log("rentor is ", rentor);
+  
+  var productValue = parseFloat(product.price)
+  var weight = parseInt(product.weight)
+  //productValue = 1200;
+  //weight = 3;
+  var collection_min_date = req.body.collectiondate + "T08:00:00.000Z";
+  var delivery_min_date = req.body.collectiondate + "T10:00:00.000Z";
+
+      const requestModel = {
+        "collection_address": {
+          "type": "residential",
+          "company": "",
+          "street_address": rentee.address,
+          "local_area": rentee.city, //"Olympus AH",
+          "city": rentee.city, //"Pretoria",
+          "code": rentee.postalcode,
+          "zone": rentee.province,
+          "country": "ZA" 
+        },
+        "collection_contact": {
+          "name": rentee.name,
+          "mobile_number": rentee.phone,
+          "email": rentee.email          
+        },
+        "delivery_address": {
+          // "street_address": rentor.address,
+         // "local_area": rentor.city, // "Menlyn",
+         // "city": rentor.city,
+         // "code": rentor.postalcode,
+         // "zone": rentor.province,
+         // "country": "ZA"
+         "type": "business",
+         "company": companyname,
+         "street_address": "10 Midas Avenue",
+           "local_area": "Olympus AH",
+           "city": "Pretoria",
+           "zone": "Gauteng",
+           "country": "ZA",
+           "code": "0081",
+           "country": "ZA"         
+          
+        },
+        "delivery_contact": {
+          "name": rentor.name,
+          "mobile_number": rentor.phone,
+          "email": rentor.email
+        },
+        "parcels": [
+          {
+            "parcel_description": "Standard flyer",
+            "submitted_length_cm": 2,
+            "submitted_width_cm": 2,
+            "submitted_height_cm": 2,
+            "submitted_weight_kg": weight
+          }
+        ],
+        "opt_in_rates": [],
+        "opt_in_time_based_rates": [
+          76
+        ],
+        "special_instructions_collection": "This is a test shipment - DO NOT COLLECT",
+        "special_instructions_delivery": req.body.deliveryNotes,
+        "declared_value": productValue,
+        "collection_min_date": collection_min_date,
+        "collection_after": "08:00",
+        "collection_before": "16:00",
+        "delivery_min_date": delivery_min_date,
+        "delivery_after": "10:00",
+        "delivery_before": "17:00",
+        "custom_tracking_reference": "",
+        "customer_reference": req.body.orderNumber,
+        "service_level_code": "ECO",
+        "mute_notifications": false
+      };    
+
+      createShipment(requestModel).then(
+        (response) => {
+          var data = response.data;
+          //console.log("data from call ", data);
+          res.send(data);
+        },
+        (error) => {            
+          console.log("error:", error);
+          res.status(500).send({ message: "Server error", error: error });
+        }
+      );     
+
+})
+
+/**
  * tracking order
  */
 app.get('/delivery/shipment/:id', verifyToken, async (req,res)=>{

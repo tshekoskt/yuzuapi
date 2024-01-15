@@ -26,18 +26,29 @@ class PaymentService {
   earlyRentalReturnRefund(startdate,enddate,datereturned, rentalamount){
         var totalRentalDays = this.dateDifferenceInDays(startdate, enddate);
         var earlyRentalDays = this.dateDifferenceInDays(startdate, datereturned);
+        console.log("totalRentalDays : ", totalRentalDays);
+        console.log("earlyRentalDays : ", earlyRentalDays);
+
         if(totalRentalDays > earlyRentalDays) //early return || cancellation by rentee
         {
           var days_rented = math.abs(totalRentalDays - earlyRentalDays);
+          //console.log("days_rented ", days_rented);
           var cost_per_day = rentalamount/totalRentalDays; //charge per day
-          var cost_for_days_in_use = cost_per_day * days_rented;
-          var cost_for_remaining_days = cost_per_day * earlyRentalDays;
+          //console.log("cost_per_day ", cost_per_day);
+          var cost_for_days_in_use = cost_per_day * earlyRentalDays; // days_rented;
+          //console.log("cost_for_days_in_use ", cost_for_days_in_use);
+          var cost_for_remaining_days = cost_per_day *  days_rented; //earlyRentalDays;
+          //console.log("cost_for_remaining_days ", cost_for_remaining_days);
+          var refundAmount = this.percentageAmountCalculator(cost_for_remaining_days, 50); //50% 
+          //console.log("refundAmount ", refundAmount);
           var dueToRentor = cost_for_days_in_use + refundAmount;
-
+          //console.log("dueToRentor ", dueToRentor);
           var serviceFee = this.percentageAmountCalculator(dueToRentor, constants.SERVICE_FEE_PERC);
+          //console.log("serviceFee ", serviceFee);
           var vatAmount =  this.calculateVAT(serviceFee);
-          var refundAmount = this.percentageAmountCalculator(cost_for_remaining_days, 50); //50%         
+          //console.log("vatAmount ", vatAmount);
           var totalDueToRentor = dueToRentor - vatAmount - serviceFee;
+          //console.log("totalDueToRentor ", totalDueToRentor);
 
           var item = {
             vatAmount: vatAmount,

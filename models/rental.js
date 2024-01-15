@@ -20,6 +20,8 @@ const rentalSchema = new mongoose.Schema({
     returntrackingnumber:String,
     returnnotes:String,
     trackingnumber:String,
+    samedeliverymethod:Boolean,
+    collectiondate:Date,
     photosbyrentee: [String],
     productId: {
         type: mongoose.Schema.Types.ObjectId,

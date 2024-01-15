@@ -39,8 +39,8 @@ app.use(
   }),
 );
 
-const serverUrl = "http://144.126.196.146:3000"; // Replace with your server's URL
-//const serverUrl = "http://localhost:3000"; // Replace with your server's URL
+//const serverUrl = "http://144.126.196.146:3000"; // Replace with your server's URL
+const serverUrl = "http://localhost:3000"; // Replace with your server's URL
 
 const verifyToken = (req, res, next) => {
   const bearerHeader = req.headers["authorization"];
@@ -604,7 +604,9 @@ app.post("/rental", verifyToken, async (req, res) => {
       trackingnumber: req.body.trackingnumber,
       modifiedBy: req.body.modifiedBy,
       createdBy: req.body.createdBy,
-      ordernumber: ordernumber
+      ordernumber: ordernumber,
+      samedeliverymethod: req.body.samedeliverymethod,
+
     });
     var rentalItem = await rental.save();
     //create a transaction - transaction table
@@ -631,7 +633,7 @@ app.post("/rental", verifyToken, async (req, res) => {
       console.log("transaction : ", transaction); 
       console.log("rental", rentalItem);     
       var updateTransaction = await transactionSchema.findByIdAndUpdate(
-        transaction._id,
+        transaction[0]._id,
         { rental : rentalItem._id,
          rentor : product.postedBy,
          totalamount : req.body.amount
@@ -720,15 +722,15 @@ app.post("/rental/cancel", verifyToken, async (req, res) => {
 
 
       //update transaction
-        await transactionSchema.findByIdAndUpdate(
-          transaction._id,
-          {
-            vatamount: amountsResults.vatamount,
-            servicefee: amountsResults.servicefee,
-            duetorentor: amountsResults.duetorentor,
-            renteerefund: amountsResults.renteerefund
-          }
-        )
+      var transactionItem =  await transactionSchema.findByIdAndUpdate(
+        transaction[0]._id,
+        {
+          vatamount: amountsResults.vatAmount,
+          servicefee: amountsResults.serviceFee,
+          duetorentor: amountsResults.totalDueToRentor,
+          renteerefund: amountsResults.renteeRefund
+        }
+      );
 
       if (amountsResults.renteerefund > 0) {
         //create refund transaction entry
@@ -755,8 +757,8 @@ app.post("/rental/cancel", verifyToken, async (req, res) => {
     var user = await getUserById(rentalProduct.postedBy);
     var email = "jomdaka@gmail.com"; //user.email;
     var body = await fs.readFile("./emailTemplates/torentorCancellationTemplate.html");
-    var data = _body.toString();
-    data = data.replace("[User Name]", _user.name)
+    var data = body.toString();
+    data = data.replace("[User Name]", user.name)
     .replace("[Item Name]", rentalProduct.make)
     .replace("[Name of the Rental Item]", rentalProduct.make)
     .replace("[Unique Reference Number]", rentalItem._id)
@@ -825,15 +827,15 @@ app.post("/rental/cancelByRentor", verifyToken, async (req, res) => {
 
 
       //update transaction
-        await transactionSchema.findByIdAndUpdate(
-          transaction._id,
-          {
-            vatamount: amountsResults.vatamount,
-            servicefee: amountsResults.servicefee,
-            duetorentor: amountsResults.duetorentor,
-            renteerefund: amountsResults.renteerefund
-          }
-        )
+      var transactionItem =  await transactionSchema.findByIdAndUpdate(
+        transaction[0]._id,
+        {
+          vatamount: amountsResults.vatAmount,
+          servicefee: amountsResults.serviceFee,
+          duetorentor: amountsResults.totalDueToRentor,
+          renteerefund: amountsResults.renteeRefund
+        }
+      );
 
       /*if (amountsResults.renteerefund > 0) {
         //create refund transaction entry
@@ -892,9 +894,8 @@ app.post("/rental/cancelByRentor", verifyToken, async (req, res) => {
 /**
  * Update: return rental
  */
-app.post("/rental/return", verifyToken, upload.array("photos", 3), async (req, res) => {
+app.post("/rental/return", verifyToken, upload.array("photos", 5), async (req, res) => {
   try {
-    console.log("request ", req.body.photos);
 
     var currentDate = new Date();
     var earlyIndicator = false;
@@ -906,6 +907,7 @@ app.post("/rental/return", verifyToken, upload.array("photos", 3), async (req, r
         returnnotes: req.body.notes,
         returntrackingnumber: req.body.trackingnumber,
         modifieddate: new Date(),
+        collectiondate: req.body.collectiondate,
         photosbyrentee: req.files.map((file) => `${serverUrl}/uploads/${file.filename}`),
 
       });
@@ -934,16 +936,17 @@ app.post("/rental/return", verifyToken, upload.array("photos", 3), async (req, r
       });*/
 
 
-      //update transaction     
-        await transactionSchema.findByIdAndUpdate(
-          transaction._id,
+      //update transaction        
+        var transactionItem =  await transactionSchema.findByIdAndUpdate(
+          transaction[0]._id,
           {
-            vatamount: amountsResults.vatamount,
-            servicefee: amountsResults.servicefee,
-            duetorentor: amountsResults.duetorentor,
-            renteerefund: amountsResults.renteerefund
+            vatamount: amountsResults.vatAmount,
+            servicefee: amountsResults.serviceFee,
+            duetorentor: amountsResults.totalDueToRentor,
+            renteerefund: amountsResults.renteeRefund
           }
-        )
+        );
+
 
       if (amountsResults.renteerefund > 0) {
         earlyIndicator = true;
