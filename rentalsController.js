@@ -998,7 +998,7 @@ app.post("/rental/return", verifyToken, upload.array("photos", 5), async (req, r
     var data = body.toString();
     data = data.replace("[User Name]", user.name)
     .replace("[Item Name]", rentalProduct.make)
-    .replace("[WebUrl]", constants.WEBSITE + `/?id=${rentalItem._id}`)
+    .replace("[WebUrl]", constants.WEBSITE + `/review?id=${rentalItem._id}&productid=${rentalProduct._id}`)
     .replace("[ImagePath]", `${serverUrl}/${rentalProduct.photos[0]}`);   
     var results = await EmailServiceInstace.sendReviewHtmlBody(email, data, subject);
 
