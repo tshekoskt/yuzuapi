@@ -11,11 +11,12 @@ const userSchema = new mongoose.Schema({
   phone: String,
   address: String,
   otp: String,
+  isRentor: Boolean,
   userGroup: String,
   isverified: Boolean,
-  province:String,
-  postalcode:String,
-  city:String
+  province: String,
+  postalcode: String,
+  city: String
 });
 
 userSchema.set('toJSON', {
