@@ -5,8 +5,9 @@ const reviewSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
   },
+  name: String, // name of the person who reviewed the item
   text: String,
-  // You can add more properties like date, rating, etc. based on your requirements
+  rating: Number, // rating given by the user
 });
 
 const rentalProductSchema = new mongoose.Schema({
