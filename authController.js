@@ -8,6 +8,9 @@ const nodemailer = require("nodemailer");
 const randomstring = require("randomstring");
 const request = require('request');
 const User = require('./models/user'); // Adjust the path to your User model
+const EmailService = require('./emailService');
+const EmailServiceInstace = new EmailService();
+const fs = require("fs").promises;
 // Import other required modules
 
 // Define functions for register, login, and reset-password'
@@ -85,7 +88,7 @@ app.post('/register', async (req, res) => {
         };
       }
 
-      const transporter = nodemailer.createTransport({
+      /*const transporter = nodemailer.createTransport({
         host: 'smtp.gmail.com',
         port: 587,
         secure: false, // or true if required
@@ -113,24 +116,42 @@ app.post('/register', async (req, res) => {
             statusCode: 500,
             message: 'Failed to send email',
           });
-        }
-
-        const hashedPassword = await bcrypt.hash(temporaryPassword, 10);
-        newUser = new User({
-          name: req.body.name,
-          email: req.body.email,
-          password: hashedPassword,
-          phone: req.body.phone,
-          isverified: true, // Assuming admin accounts are verified by default
-          isAdmin: true,
-          userGroup: req.body.userGroup,
+        }        
+      });*/
+      //registration confirmation email 
+      try{
+        var subject = 'Admin Account Information';
+        var body = await fs.readFile("./emailTemplates/registrationTemplate.html");
+        var data = body.toString();
+        data = data.replace("[User Name]", req.body.name)
+        .replace("[Username]", req.body.email)
+        .replace("[TemporaryPassword]", temporaryPassword)
+        .replace("[Email]", req.body.email); 
+        var results = await EmailServiceInstace.sendReviewHtmlBody(req.body.email, data, subject);
+      }
+      catch(error){
+        console.error(error);
+        return res.status(500).send({
+          statusCode: 500,
+          message: 'Failed to send email',
         });
+      }
 
-        await newUser.save();
-        res.send({
-          statusCode: 200,
-          message: 'Admin account created. Please check your email for login information.',
-        });
+      const hashedPassword = await bcrypt.hash(temporaryPassword, 10);
+      newUser = new User({
+        name: req.body.name,
+        email: req.body.email,
+        password: hashedPassword,
+        phone: req.body.phone,
+        isverified: true, // Assuming admin accounts are verified by default
+        isAdmin: true,
+        userGroup: req.body.userGroup,
+      });
+
+      await newUser.save();
+      res.send({
+        statusCode: 200,
+        message: 'Admin account created. Please check your email for login information.',
       });
     } else {
       const options = {
@@ -214,6 +235,14 @@ app.patch("/update-profile", async (req, res) => {
         email: req.body.email,
         phone: req.body.phone
       });
+
+      
+        var subject = 'Account Information change';
+        var body = await fs.readFile("./emailTemplates/accountChangeTemplate.html");
+        var data = body.toString();
+        data = data.replace("[User Name]", req.body.name);       
+        var results = await EmailServiceInstace.sendReviewHtmlBody(req.body.email, data, subject);
+      
 
     res.send({
       statuscode: 200,
