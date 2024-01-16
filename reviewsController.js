@@ -101,4 +101,40 @@ app.post("/request-review", async (req, res) => {
   }
 });
 
+app.post("/post-review", async (req, res) => {
+  try {
+    // Check if the user has rented the item before posting a review
+    const rentedProduct = await RentalProduct.findOne({
+      _id: req.body.rentedItemId,
+      rentedBy: req.userId,
+    });
+
+    if (!rentedProduct) {
+      return res.status(403).send("You are not authorized to post a review for this item");
+    }
+
+    // Check if the review has already been posted for this rental
+    const existingReview = rentedProduct.reviewComments.find(comment => comment.user == req.userId);
+    if (existingReview) {
+      return res.status(400).send("Review for this rental has already been posted");
+    }
+
+    // Add the review to the rental product
+    // Add the review to the rental product
+    rentedProduct.reviewComments.push({
+      user: req.userId,
+      name: req.body.name, // assuming the name is sent in the request body
+      text: req.body.reviewText,
+      rating: req.body.rating, // assuming the rating is sent in the request body
+    });
+
+    await rentedProduct.save();
+
+    res.send("Review posted successfully");
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Internal Server Error");
+  }
+});
+
 module.exports = app;
