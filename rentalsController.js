@@ -20,8 +20,7 @@ const EmailService = require('./emailService');
 const EmailServiceInstace = new EmailService();
 const PaymentService = require("./paymentService");
 const paymentService = new PaymentService();
-const fs = require("fs").promises;
-const path = require('path');
+git 
 const { Stream } = require("stream");
 const constants = require('./constants');
 
@@ -741,7 +740,7 @@ app.post("/rental/cancel", verifyToken, async (req, res) => {
     //send cancellation email to rentee
      var _subject = `Cancellation : Rental NO. ${rentalItem._id} Item Name ${rentalProduct.make}`;
      var _user = await getUserById(rentalItem.createdBy);
-     var _email = "jomdaka@gmail.com"; //_user.email;
+     var _email = _user.email;
      var _body = await fs.readFile("./emailTemplates/renteeCancellationTemplate.html");
      var _data = _body.toString();
      _data = _data.replace("[User Name]", _user.name)
@@ -755,7 +754,7 @@ app.post("/rental/cancel", verifyToken, async (req, res) => {
     //send cancelation email notification to rentor
     var subject = `Rental no. ${rentalItem._id} Item ${rentalProduct.make} cancelled`;
     var user = await getUserById(rentalProduct.postedBy);
-    var email = "jomdaka@gmail.com"; //user.email;
+    var email = user.email;
     var body = await fs.readFile("./emailTemplates/torentorCancellationTemplate.html");
     var data = body.toString();
     data = data.replace("[User Name]", user.name)
@@ -846,7 +845,7 @@ app.post("/rental/cancelByRentor", verifyToken, async (req, res) => {
     //send cancellation email to rentor
      var _subject = `Cancellation : Rental NO. ${rentalItem._id} Item Name ${rentalProduct.make}`;
      var _user = await getUserById(rentalProduct.postedBy);
-     var _email = "jomdaka@gmail.com"; //_user.email;
+     var _email = _user.email;
      var _body = await fs.readFile("./emailTemplates/rentorCancellationTemplate.html");
      var _data = _body.toString();
      _data = _data.replace("[User Name]", _user.name)
@@ -863,7 +862,7 @@ app.post("/rental/cancelByRentor", verifyToken, async (req, res) => {
       has been cancelled with the following reason:
       ${rentalItem.notes} `;*/
     var user = await getUserById(rentalItem.createdBy);
-    var email = "jomdaka@gmail.com"; //user.email;
+    var email = user.email;
     var body = await fs.readFile("./emailTemplates/torenteeCancellationTemplate.html");
     var data = _body.toString();
     data = data.replace("[User Name]", user.name)
@@ -956,7 +955,7 @@ app.post("/rental/return", verifyToken, upload.array("photos", 5), async (req, r
         //send early return email to rentee
         var subject = `Item Early Return : Rental NO. ${rentalItem._id} Item Name ${rentalProduct.make}`;
         var user = await getUserById(rentalItem.createdBy);
-        var email = "jomdaka@gmail.com"; //user.email;
+        var email = user.email;
         var body = await fs.readFile("./emailTemplates/renteeEarlyReturn.html");
         var data = body.toString();
         data = data.replace("[User Name]", user.name)
@@ -970,7 +969,7 @@ app.post("/rental/return", verifyToken, upload.array("photos", 5), async (req, r
         //send early return email to rentor
         var _subject = `Item Early Return : Rental NO. ${rentalItem._id} Item Name ${rentalProduct.make}`;
         var _user = await getUserById(rentalProduct.postedBy);
-        var _email = "jomdaka@gmail.com"; //_user.email;
+        var _email = _user.email;
         var _body = await fs.readFile("./emailTemplates/torentorEarlyReturn.html");
         var _data = _body.toString();
         _data = _data.replace("[User Name]", _user.name)
@@ -993,7 +992,7 @@ app.post("/rental/return", verifyToken, upload.array("photos", 5), async (req, r
   //Review email notification to rentee
     var subject = `Rental no. ${rentalItem._id} Item ${rentalProduct.make}`;
     var user = await getUserById(rentalItem.createdBy);
-    var email = "jomdaka@gmail.com"; //user.email;
+    var email = user.email;
     var body = await fs.readFile("./emailTemplates/yuzutemplate.html");
     var data = body.toString();
     data = data.replace("[User Name]", user.name)
@@ -1008,7 +1007,7 @@ app.post("/rental/return", verifyToken, upload.array("photos", 5), async (req, r
          //send return email to rentor
          var _subject = `Item Return : Rental NO. ${rentalItem._id} Item Name ${rentalProduct.make}`;
          var _user = await getUserById(rentalProduct.postedBy);
-         var _email = "jomdaka@gmail.com"; //_user.email;
+         var _email = _user.email;
          var _body = await fs.readFile("./emailTemplates/torentorReturnTemplate.html");
          var _data = _body.toString();
          _data = _data.replace("[User Name]", _user.name)
@@ -1100,7 +1099,7 @@ app.post(`/rental/receivedByRentor`, verifyToken, async (req, res) => {
       //send early return email to rentee
       var subject = `Item Early Return : Rental NO. ${rentalItem._id} Item Name ${rentalProduct.make}`;
       var user = await getUserById(rentalItem.createdBy);
-      var email = "jomdaka@gmail.com"; //user.email;
+      var email = user.email;
       var body = await fs.readFile("./emailTemplates/torenteeConfirmingReturnTemplate.html");
       var data = body.toString();
       data = data.replace("[User Name]", user.name)
