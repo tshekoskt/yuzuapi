@@ -20,7 +20,6 @@ const EmailService = require('./emailService');
 const EmailServiceInstace = new EmailService();
 const PaymentService = require("./paymentService");
 const paymentService = new PaymentService();
-git 
 const { Stream } = require("stream");
 const constants = require('./constants');
 

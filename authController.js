@@ -88,7 +88,7 @@ app.post('/register', async (req, res) => {
         };
       }
 
-      /*const transporter = nodemailer.createTransport({
+      const transporter = nodemailer.createTransport({
         host: 'smtp.gmail.com',
         port: 587,
         secure: false, // or true if required
@@ -117,25 +117,7 @@ app.post('/register', async (req, res) => {
             message: 'Failed to send email',
           });
         }        
-      });*/
-      //registration confirmation email 
-      try{
-        var subject = 'Admin Account Information';
-        var body = await fs.readFile("./emailTemplates/registrationTemplate.html");
-        var data = body.toString();
-        data = data.replace("[User Name]", req.body.name)
-        .replace("[Username]", req.body.email)
-        .replace("[TemporaryPassword]", temporaryPassword)
-        .replace("[Email]", req.body.email); 
-        var results = await EmailServiceInstace.sendReviewHtmlBody(req.body.email, data, subject);
-      }
-      catch(error){
-        console.error(error);
-        return res.status(500).send({
-          statusCode: 500,
-          message: 'Failed to send email',
-        });
-      }
+      });    
 
       const hashedPassword = await bcrypt.hash(temporaryPassword, 10);
       newUser = new User({
@@ -178,6 +160,25 @@ app.post('/register', async (req, res) => {
           isverified: false,
           isAdmin: false,
         });
+
+        //registration confirmation email 
+      try{
+        var subject = 'Admin Account Information';
+        var body = await fs.readFile("./emailTemplates/registrationTemplate.html");
+        var data = body.toString();
+        data = data.replace("[User Name]", req.body.name)
+        .replace("[Username]", req.body.email)
+        .replace("[TemporaryPassword]", hashedPassword)
+        .replace("[Email]", req.body.email); 
+        var results = await EmailServiceInstace.sendReviewHtmlBody(req.body.email, data, subject);
+      }
+      catch(error){
+        console.error(error);
+        return res.status(500).send({
+          statusCode: 500,
+          message: 'Failed to send email',
+        });
+      }
 
         await newUser.save();
         res.send({
