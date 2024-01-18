@@ -10,7 +10,6 @@ const multer = require("multer");
 const swaggerUi = require("swagger-ui-express");
 const swaggerJsdoc = require("swagger-jsdoc");
 const cors = require("cors");
-const fs = require("fs").promises;
 const request = require('request');
 //const models = require('./models');
 const RentalItem = require('./models/rental');
