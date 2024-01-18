@@ -10,6 +10,7 @@ const multer = require("multer");
 const swaggerUi = require("swagger-ui-express");
 const swaggerJsdoc = require("swagger-jsdoc");
 const cors = require("cors");
+const fs = require("fs").promises;
 const request = require('request');
 //const models = require('./models');
 const RentalItem = require('./models/rental');
@@ -67,7 +68,7 @@ app.get("/testendpoint", async (req,res)=>{
   .replace("[Item Name]", "JBL Speaker")
   .replace("[WebUrl]", constants.WEBSITE + "/")
   .replace("[ImagePath]", serverUrl);
-  
+
   console.log("review email body", data);
   var results = await EmailServiceInstace.sendReviewHtmlBody("jomdaka@gmail.com", data, "Testing Email");
   console.log("Email results: ", results);
@@ -627,15 +628,16 @@ app.post("/rental", verifyToken, async (req, res) => {
       });
 
       await newTransaction.save();
-    } else {      
-      //update transaction    
-      console.log("transaction : ", transaction); 
-      console.log("rental", rentalItem);     
+    } else {
+      //update transaction
+      console.log("transaction : ", transaction);
+      console.log("rental", rentalItem);
       var updateTransaction = await transactionSchema.findByIdAndUpdate(
         transaction[0]._id,
-        { rental : rentalItem._id,
-         rentor : product.postedBy,
-         totalamount : req.body.amount
+        {
+          rental: rentalItem._id,
+          rentor: product.postedBy,
+          totalamount: req.body.amount
         }
       );
     }
@@ -721,7 +723,7 @@ app.post("/rental/cancel", verifyToken, async (req, res) => {
 
 
       //update transaction
-      var transactionItem =  await transactionSchema.findByIdAndUpdate(
+      var transactionItem = await transactionSchema.findByIdAndUpdate(
         transaction[0]._id,
         {
           vatamount: amountsResults.vatAmount,
@@ -738,18 +740,18 @@ app.post("/rental/cancel", verifyToken, async (req, res) => {
       }
     }
     //send cancellation email to rentee
-     var _subject = `Cancellation : Rental NO. ${rentalItem._id} Item Name ${rentalProduct.make}`;
-     var _user = await getUserById(rentalItem.createdBy);
-     var _email = _user.email;
-     var _body = await fs.readFile("./emailTemplates/renteeCancellationTemplate.html");
-     var _data = _body.toString();
-     _data = _data.replace("[User Name]", _user.name)
-     .replace("[Item Name]", rentalProduct.make)
-     .replace("[Name of the Rental Item]", rentalProduct.make)
-     .replace("[Unique Reference Number]", rentalItem._id)
-     .replace("[SupportEmail]", constants.SUPPORT_EMAIL)
-     .replace("[Date of Cancellation]", currentDate);   
-     await EmailServiceInstace.sendReviewHtmlBody(_email, _data, _subject);   
+    var _subject = `Cancellation : Rental NO. ${rentalItem._id} Item Name ${rentalProduct.make}`;
+    var _user = await getUserById(rentalItem.createdBy);
+    var _email = _user.email;
+    var _body = await fs.readFile("./emailTemplates/renteeCancellationTemplate.html");
+    var _data = _body.toString();
+    _data = _data.replace("[User Name]", _user.name)
+      .replace("[Item Name]", rentalProduct.make)
+      .replace("[Name of the Rental Item]", rentalProduct.make)
+      .replace("[Unique Reference Number]", rentalItem._id)
+      .replace("[SupportEmail]", constants.SUPPORT_EMAIL)
+      .replace("[Date of Cancellation]", currentDate);
+    await EmailServiceInstace.sendReviewHtmlBody(_email, _data, _subject);
 
     //send cancelation email notification to rentor
     var subject = `Rental no. ${rentalItem._id} Item ${rentalProduct.make} cancelled`;
@@ -758,13 +760,13 @@ app.post("/rental/cancel", verifyToken, async (req, res) => {
     var body = await fs.readFile("./emailTemplates/torentorCancellationTemplate.html");
     var data = body.toString();
     data = data.replace("[User Name]", user.name)
-    .replace("[Item Name]", rentalProduct.make)
-    .replace("[Name of the Rental Item]", rentalProduct.make)
-    .replace("[Unique Reference Number]", rentalItem._id)
-    .replace("[SupportEmail]", constants.SUPPORT_EMAIL)
-    .replace("[Date of Cancellation]", currentDate);   
-    await EmailServiceInstace.sendReviewHtmlBody(email, data, subject);  
-   
+      .replace("[Item Name]", rentalProduct.make)
+      .replace("[Name of the Rental Item]", rentalProduct.make)
+      .replace("[Unique Reference Number]", rentalItem._id)
+      .replace("[SupportEmail]", constants.SUPPORT_EMAIL)
+      .replace("[Date of Cancellation]", currentDate);
+    await EmailServiceInstace.sendReviewHtmlBody(email, data, subject);
+
     /*var body = `Rental with reference munber ${rentalItem._id}, for product ${rentalProduct.make}, from date ${rentalItem.startdate} until ${rentalProduct.enddate}
       has been cancelled with the following reason:
       ${rentalItem.notes} `;
@@ -790,8 +792,8 @@ app.post("/rental/cancel", verifyToken, async (req, res) => {
 app.post("/rental/cancelByRentor", verifyToken, async (req, res) => {
   try {
     //console.log("retrun item request : ", req.body);
-     //get product
-     const rentalProduct = await getProductById(rentalItem.productId);
+    //get product
+    const rentalProduct = await getProductById(rentalItem.productId);
 
     var currentDate = new Date();
     const rentalItem = await RentalItem.findByIdAndUpdate(
@@ -804,7 +806,7 @@ app.post("/rental/cancelByRentor", verifyToken, async (req, res) => {
       });
 
     //console.log("rental cancel response", rentalItem);
-   
+
     //get transaction
     var transaction = await transactionSchema.find({
       ordernumber: rentalItem.ordernumber
@@ -826,7 +828,7 @@ app.post("/rental/cancelByRentor", verifyToken, async (req, res) => {
 
 
       //update transaction
-      var transactionItem =  await transactionSchema.findByIdAndUpdate(
+      var transactionItem = await transactionSchema.findByIdAndUpdate(
         transaction[0]._id,
         {
           vatamount: amountsResults.vatAmount,
@@ -843,18 +845,18 @@ app.post("/rental/cancelByRentor", verifyToken, async (req, res) => {
       }*/
     }
     //send cancellation email to rentor
-     var _subject = `Cancellation : Rental NO. ${rentalItem._id} Item Name ${rentalProduct.make}`;
-     var _user = await getUserById(rentalProduct.postedBy);
-     var _email = _user.email;
-     var _body = await fs.readFile("./emailTemplates/rentorCancellationTemplate.html");
-     var _data = _body.toString();
-     _data = _data.replace("[User Name]", _user.name)
-     .replace("[Item Name]", rentalProduct.make)
-     .replace("[Name of the Rental Item]", rentalProduct.make)
-     .replace("[Unique Reference Number]", rentalItem._id)
-     .replace("[SupportEmail]", constants.SUPPORT_EMAIL)
-     .replace("[Date of Cancellation]", currentDate);   
-     await EmailServiceInstace.sendReviewHtmlBody(_email, _data, _subject);   
+    var _subject = `Cancellation : Rental NO. ${rentalItem._id} Item Name ${rentalProduct.make}`;
+    var _user = await getUserById(rentalProduct.postedBy);
+    var _email = _user.email;
+    var _body = await fs.readFile("./emailTemplates/rentorCancellationTemplate.html");
+    var _data = _body.toString();
+    _data = _data.replace("[User Name]", _user.name)
+      .replace("[Item Name]", rentalProduct.make)
+      .replace("[Name of the Rental Item]", rentalProduct.make)
+      .replace("[Unique Reference Number]", rentalItem._id)
+      .replace("[SupportEmail]", constants.SUPPORT_EMAIL)
+      .replace("[Date of Cancellation]", currentDate);
+    await EmailServiceInstace.sendReviewHtmlBody(_email, _data, _subject);
 
     //send cancelation email notification to rentee
     /*var subject = `Rental no. ${rentalItem._id} Item ${rentalProduct.make} cancelled`;
@@ -866,12 +868,12 @@ app.post("/rental/cancelByRentor", verifyToken, async (req, res) => {
     var body = await fs.readFile("./emailTemplates/torenteeCancellationTemplate.html");
     var data = _body.toString();
     data = data.replace("[User Name]", user.name)
-     .replace("[Item Name]", rentalProduct.make)
-     .replace("[Name of the Rental Item]", rentalProduct.make)
-     .replace("[Unique Reference Number]", rentalItem._id)
-     .replace("[SupportEmail]", constants.SUPPORT_EMAIL)
-     .replace("[Date of Cancellation]", currentDate);   
-    await EmailServiceInstace.sendReviewHtmlBody(email, data, subject);     
+      .replace("[Item Name]", rentalProduct.make)
+      .replace("[Name of the Rental Item]", rentalProduct.make)
+      .replace("[Unique Reference Number]", rentalItem._id)
+      .replace("[SupportEmail]", constants.SUPPORT_EMAIL)
+      .replace("[Date of Cancellation]", currentDate);
+    await EmailServiceInstace.sendReviewHtmlBody(email, data, subject);
     //console.log("email to :", email);
     var results = await EmailServiceInstace.sendCancelationEmail(email, body, subject);
     console.log("email results", results);
@@ -910,7 +912,7 @@ app.post("/rental/return", verifyToken, upload.array("photos", 5), async (req, r
         photosbyrentee: req.files.map((file) => `${serverUrl}/uploads/${file.filename}`),
 
       });
-      
+
     console.log("rental return response", rentalItem);
     const rentalProduct = await getProductById(rentalItem.productId);
 
@@ -935,21 +937,21 @@ app.post("/rental/return", verifyToken, upload.array("photos", 5), async (req, r
       });*/
 
 
-      //update transaction        
-        var transactionItem =  await transactionSchema.findByIdAndUpdate(
-          transaction[0]._id,
-          {
-            vatamount: amountsResults.vatAmount,
-            servicefee: amountsResults.serviceFee,
-            duetorentor: amountsResults.totalDueToRentor,
-            renteerefund: amountsResults.renteeRefund
-          }
-        );
+      //update transaction
+      var transactionItem = await transactionSchema.findByIdAndUpdate(
+        transaction[0]._id,
+        {
+          vatamount: amountsResults.vatAmount,
+          servicefee: amountsResults.serviceFee,
+          duetorentor: amountsResults.totalDueToRentor,
+          renteerefund: amountsResults.renteeRefund
+        }
+      );
 
 
       if (amountsResults.renteerefund > 0) {
         earlyIndicator = true;
-        //create refund transaction entry        
+        //create refund transaction entry
         var refundtransactionItem = refundTransaction(transaction);
         await refundtransactionItem.save();
         //send early return email to rentee
@@ -959,11 +961,11 @@ app.post("/rental/return", verifyToken, upload.array("photos", 5), async (req, r
         var body = await fs.readFile("./emailTemplates/renteeEarlyReturn.html");
         var data = body.toString();
         data = data.replace("[User Name]", user.name)
-        .replace("[Item Name]", rentalProduct.make)
-        .replace("[Name of the Rental Item]", rentalProduct.make)
-        .replace("[Unique Reference Number]", rentalItem._id)
-        .replace("[SupportEmail]", constants.SUPPORT_EMAIL)
-        .replace("[Date of Early Return]", currentDate);   
+          .replace("[Item Name]", rentalProduct.make)
+          .replace("[Name of the Rental Item]", rentalProduct.make)
+          .replace("[Unique Reference Number]", rentalItem._id)
+          .replace("[SupportEmail]", constants.SUPPORT_EMAIL)
+          .replace("[Date of Early Return]", currentDate);
         await EmailServiceInstace.sendReviewHtmlBody(email, data, subject);
 
         //send early return email to rentor
@@ -973,52 +975,52 @@ app.post("/rental/return", verifyToken, upload.array("photos", 5), async (req, r
         var _body = await fs.readFile("./emailTemplates/torentorEarlyReturn.html");
         var _data = _body.toString();
         _data = _data.replace("[User Name]", _user.name)
-        .replace("[Item Name]", rentalProduct.make)
-        .replace("[Name of the Rental Item]", rentalProduct.make)
-        .replace("[Unique Reference Number]", rentalItem._id)
-        .replace("[SupportEmail]", constants.SUPPORT_EMAIL)
-        .replace("[Date of Early Return]", currentDate);   
+          .replace("[Item Name]", rentalProduct.make)
+          .replace("[Name of the Rental Item]", rentalProduct.make)
+          .replace("[Unique Reference Number]", rentalItem._id)
+          .replace("[SupportEmail]", constants.SUPPORT_EMAIL)
+          .replace("[Date of Early Return]", currentDate);
         await EmailServiceInstace.sendReviewHtmlBody(_email, _data, _subject);
-        
+
       }
     }
 
-    
+
     /*var body = `Rental with reference munber ${rentalItem._id}, for product ${rentalProduct.make}, from date ${rentalItem.startdate} until ${rentalProduct.enddate}
       has been cancel with the following reason:
       ${rentalItem.notes} `;
 */
-   
-  //Review email notification to rentee
+
+    //Review email notification to rentee
     var subject = `Rental no. ${rentalItem._id} Item ${rentalProduct.make}`;
     var user = await getUserById(rentalItem.createdBy);
     var email = user.email;
     var body = await fs.readFile("./emailTemplates/yuzutemplate.html");
     var data = body.toString();
     data = data.replace("[User Name]", user.name)
-    .replace("[Item Name]", rentalProduct.make)
-    .replace("[WebUrl]", constants.WEBSITE + `/review?id=${rentalItem._id}&productid=${rentalProduct._id}`)
-    .replace("[ImagePath]", `${serverUrl}/${rentalProduct.photos[0]}`);   
+      .replace("[Item Name]", rentalProduct.make)
+      .replace("[WebUrl]", constants.WEBSITE + `/review?id=${rentalItem._id}&productid=${rentalProduct._id}`)
+      .replace("[ImagePath]", `${serverUrl}/${rentalProduct.photos[0]}`);
     var results = await EmailServiceInstace.sendReviewHtmlBody(email, data, subject);
 
-    
-    if(!earlyIndicator){
-        //Also need to send email to Rentor : TODO - NJ to provie template
-         //send return email to rentor
-         var _subject = `Item Return : Rental NO. ${rentalItem._id} Item Name ${rentalProduct.make}`;
-         var _user = await getUserById(rentalProduct.postedBy);
-         var _email = _user.email;
-         var _body = await fs.readFile("./emailTemplates/torentorReturnTemplate.html");
-         var _data = _body.toString();
-         _data = _data.replace("[User Name]", _user.name)
-         .replace("[Item Name]", rentalProduct.make)
-         .replace("[Name of the Rental Item]", rentalProduct.make)
-         .replace("[Unique Reference Number]", rentalItem._id)
-         .replace("[SupportEmail]", constants.SUPPORT_EMAIL)
-         .replace("[Date of Return]", currentDate);   
-         await EmailServiceInstace.sendReviewHtmlBody(_email, _data, _subject);
+
+    if (!earlyIndicator) {
+      //Also need to send email to Rentor : TODO - NJ to provie template
+      //send return email to rentor
+      var _subject = `Item Return : Rental NO. ${rentalItem._id} Item Name ${rentalProduct.make}`;
+      var _user = await getUserById(rentalProduct.postedBy);
+      var _email = _user.email;
+      var _body = await fs.readFile("./emailTemplates/torentorReturnTemplate.html");
+      var _data = _body.toString();
+      _data = _data.replace("[User Name]", _user.name)
+        .replace("[Item Name]", rentalProduct.make)
+        .replace("[Name of the Rental Item]", rentalProduct.make)
+        .replace("[Unique Reference Number]", rentalItem._id)
+        .replace("[SupportEmail]", constants.SUPPORT_EMAIL)
+        .replace("[Date of Return]", currentDate);
+      await EmailServiceInstace.sendReviewHtmlBody(_email, _data, _subject);
     }
-    
+
     //var results = await EmailServiceInstace.sendCancelationEmail(email, body, subject);
     //console.log("email results", results);
     return res.status(200).send({ message: "success", transaction: transaction });
@@ -1095,20 +1097,20 @@ app.post(`/rental/receivedByRentor`, verifyToken, async (req, res) => {
         modifieddate: new Date()
       });
 
-      const rentalProduct = await getProductById(rentalItem.productId);
-      //send early return email to rentee
-      var subject = `Item Early Return : Rental NO. ${rentalItem._id} Item Name ${rentalProduct.make}`;
-      var user = await getUserById(rentalItem.createdBy);
-      var email = user.email;
-      var body = await fs.readFile("./emailTemplates/torenteeConfirmingReturnTemplate.html");
-      var data = body.toString();
-      data = data.replace("[User Name]", user.name)
+    const rentalProduct = await getProductById(rentalItem.productId);
+    //send early return email to rentee
+    var subject = `Item Early Return : Rental NO. ${rentalItem._id} Item Name ${rentalProduct.make}`;
+    var user = await getUserById(rentalItem.createdBy);
+    var email = user.email;
+    var body = await fs.readFile("./emailTemplates/torenteeConfirmingReturnTemplate.html");
+    var data = body.toString();
+    data = data.replace("[User Name]", user.name)
       .replace("[Item Name]", rentalProduct.make)
       .replace("[Name of the Rental Item]", rentalProduct.make)
       .replace("[Unique Reference Number]", rentalItem._id)
       .replace("[SupportEmail]", constants.SUPPORT_EMAIL)
-      .replace("[Date of Return]", currentDate);   
-      await EmailServiceInstace.sendReviewHtmlBody(email, data, subject);
+      .replace("[Date of Return]", currentDate);
+    await EmailServiceInstace.sendReviewHtmlBody(email, data, subject);
     return res.status(200).send({ message: "success" });
   } catch (error) {
     console.error(error);
