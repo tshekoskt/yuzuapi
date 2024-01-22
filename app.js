@@ -1155,7 +1155,7 @@ app.get('/chatsbyuser/:userId', async (req, res) => {
     // Now, for each top-level chat, find and attach its replies
     const chatsWithReplies = await Promise.all(
       chats.map(async (chat) => {
-        
+
         const replies = await Chat.find({ parentId: chat._id }).populate("postedBy");
 
         console.log(chat._id);
@@ -1185,7 +1185,7 @@ app.get('/chatsbyproduct/:productId', async (req, res) => {
     // Now, for each top-level chat, find and attach its replies
     const chatsWithReplies = await Promise.all(
       chats.map(async (chat) => {
-        
+
         const replies = await Chat.find({ parentId: chat._id }).populate("postedBy");
 
         console.log(chat._id);
