@@ -138,6 +138,27 @@ app.post('/payment/notification',async (req,res)=>{
     }
   });
 
+  /**
+ * get payment by order number
+ */
+  app.get('/payment/:id',verifyToken, async (req,res)=>{
+    try{
+      //get transaction
+      var _ordernumber = req.params.id;
+      var transaction = await transactionSchema.find({
+        ordernumber: _ordernumber
+      });
+      
+      if(!transaction)
+         res.status(400).send("Item not found");
+       
+      res.status(200).send(transaction);
+
+    }catch(error){
+        res.status(400).send(error);
+    }
+  });
+
 
   /**
    * Helper methods
