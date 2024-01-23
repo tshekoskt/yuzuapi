@@ -4,6 +4,7 @@ const querySchema = new mongoose.Schema({
   name: String,
   email: String,
   message: String,
+  referencenumber: String,
   isactive: Boolean,
 });
 
