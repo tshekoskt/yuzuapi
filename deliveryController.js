@@ -308,9 +308,9 @@ app.post('/delivery/createshipment', verifyToken, async (req,res)=>{
         "parcels": [
           {
             "parcel_description": "Standard flyer",
-            "submitted_length_cm": 2,
-            "submitted_width_cm": 2,
-            "submitted_height_cm": 2,
+            "submitted_length_cm": 0,
+            "submitted_width_cm": 0,
+            "submitted_height_cm": 0,
             "submitted_weight_kg": weight
           }
         ],

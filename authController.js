@@ -11,6 +11,7 @@ const User = require('./models/user'); // Adjust the path to your User model
 const EmailService = require('./emailService');
 const EmailServiceInstace = new EmailService();
 const fs = require("fs").promises;
+const constants = require('./constants');
 // Import other required modules
 
 // Define functions for register, login, and reset-password'
@@ -169,7 +170,8 @@ app.post('/register', async (req, res) => {
         data = data.replace("[User Name]", req.body.name)
         .replace("[Username]", req.body.email)
         .replace("[TemporaryPassword]", hashedPassword)
-        .replace("[Email]", req.body.email); 
+        .replace("[Email]", req.body.email)
+        .replaceAll("[Support Email Address]", constants.SUPPORT_EMAIL);
         var results = await EmailServiceInstace.sendReviewHtmlBody(req.body.email, data, subject);
       }
       catch(error){

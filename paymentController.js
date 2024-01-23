@@ -139,12 +139,12 @@ app.post('/payment/notification',async (req,res)=>{
   });
 
   /**
- * get payment by order number
+ * get payment transaction by order number
  */
-  app.get('/payment/:id',verifyToken, async (req,res)=>{
+  app.get('/payment/:ordernumber',verifyToken, async (req,res)=>{
     try{
       //get transaction
-      var _ordernumber = req.params.id;
+      var _ordernumber = req.params.ordernumber;
       var transaction = await transactionSchema.find({
         ordernumber: _ordernumber
       });
