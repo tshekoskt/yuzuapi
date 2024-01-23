@@ -12,12 +12,16 @@ const swaggerUi = require("swagger-ui-express");
 const swaggerJsdoc = require("swagger-jsdoc");
 const cors = require("cors");
 const request = require('request');
+const fs = require('fs');
 //const models = require('./models');
 const RentalItem = require('./models/rental');
+const EmailService = require('./emailService');
+const EmailServiceInstace = new EmailService();
 //const Rental = require('./models/rental');
 const RentalProduct = require('./models/rentalProducts');
 const Query = require('./models/query');
 const userSchema = require('./models/user');
+const constants = require('./constants');
 
 
 app.use(cors({
@@ -127,18 +131,40 @@ app.post("/post-rental-item-public", upload.array("photos", 5), async (req, res)
 
 app.post("/product/post-query", async (req, res) => { //post query
   try {
+    const refNumber = generateRefNumber();
     const query = new Query({
       name: req.body.name,
       email: req.body.email,
       message: req.body.message,
-      isactive: true
+      referencenumber: refNumber,
+      isactive: true,
     });
+
+    // Prepare the email
+    var _subject = `New Query: ${refNumber}`;
+    var _user = { name: req.body.name, email: req.body.email };
+    var _email = _user.email;
+    var _body = await fs.promises.readFile("./emailTemplates/queryemailTemplate.html");
+    var _data = _body.toString();
+    _data = _data.replace("[User's Name]", _user.name)
+      .replace("[Unique Reference Numbers]", refNumber)
+      .replace("[Date and Time of Complaint Submission]", new Date())
+      .replace("[Brief description of the complaint]", req.body.message)
+      .replace("[Support Email Address]", constants.SUPPORT_EMAIL);
+
+    // Send the email
+    //await EmailService.sendQueryEmail(_user.name, _email, _data, _subject);
+    await EmailServiceInstace.sendQueryEmail(_user.name, _email, _data, _subject);
+
+    // Save the query only if the email was sent successfully
     await query.save();
-    res.status(200).json({ message: "Query added successfully" });
+
+    res.status(200).json({ message: "Query added and email sent successfully" });
   } catch (error) {
-    res.status(400).send(error);
+    res.status(400).send({ error: error.toString() });
   }
 });
+
 
 app.patch("/product/update-rental", async (req, res) => {
 
@@ -180,6 +206,7 @@ app.patch("/product/update-rental", async (req, res) => {
 const path = require('path');
 const { Stream } = require("stream");
 const query = require('./models/query');
+//const EmailService = require('./emailService');
 
 app.get('/get-rental-item-public', async (req, res) => {
   try {
@@ -406,5 +433,19 @@ app.post("/product/updateAvailability", async (req, res) => {
     }
   }
 });
+
+function generateRefNumber() {
+  // Generate a random number between 100 and 999
+  var randomNumber = Math.floor(Math.random() * 900) + 100;
+
+  // Get today's date and format it to two digits
+  var date = new Date();
+  var day = ("0" + date.getDate()).slice(-2);
+
+  // Form the reference number
+  var refNumber = "YUZU-" + randomNumber + "-" + day;
+
+  return refNumber;
+}
 
 module.exports = app;
