@@ -583,6 +583,7 @@ app.post("/rental", verifyToken, async (req, res) => {
   //console.log("rental request.body :", req.body);
   try {
 
+    var currentDate = new Date();
     var ordernumber = req.body.orderNumber;
     //
     const rental = new RentalItem({
@@ -619,7 +620,7 @@ app.post("/rental", verifyToken, async (req, res) => {
       //create transaction
       var newTransaction = new transactionSchema({
         transactiondate: new Date(),
-        totalamount: req.body.amount,
+        totalamount: req.body.totalAmount,
         ordernumber: ordernumber,
         payment_status: "Pending",
         rental: rentalItem._id,
@@ -636,10 +637,24 @@ app.post("/rental", verifyToken, async (req, res) => {
         {
           rental: rentalItem._id,
           rentor: product.postedBy,
-          totalamount: req.body.amount
+          totalamount: req.body.totalAmount
         }
       );
     }
+    //Send transaction/receipt email to user
+    var _subject = `Rental confirmation : Order number ${ordernumber} Item name ${product.make}`;
+    var _user = await getUserById(rentalItem.createdBy);
+    var _email = _user.email;
+    var _body = await fs.readFile("./emailTemplates/renteeCancellationTemplate.html");
+    var _data = _body.toString();
+    _data = _data.replace("[User Name]", _user.name)
+      .replace("[Item Name]", product.make)
+      .replace("[Name of the Rental Item]", product.make)
+      .replace("[Unique Reference Number]", rentalItem._id)
+      .replace("[SupportEmail]", constants.SUPPORT_EMAIL)
+      .replace("[Date of Cancellation]", currentDate);
+     EmailServiceInstace.sendReviewHtmlBody(_email, _data, _subject);
+
 
     res.status(201).send({
       message: "Rental item posted successfully",
@@ -948,11 +963,12 @@ app.post("/rental/return", verifyToken, upload.array("photos", 5), async (req, r
       );
 
 
-      if (amountsResults.renteerefund > 0) {
+      if (amountsResults.renteeRefund > 0) {
         earlyIndicator = true;
         //create refund transaction entry
-        var refundtransactionItem = refundTransaction(transaction);
-        await refundtransactionItem.save();
+        //var refundtransactionItem = refundTransaction(transaction);
+        //await refundtransactionItem.save();
+        console.log("log 1");
         //send early return email to rentee
         var subject = `Item Early Return : Rental NO. ${rentalItem._id} Item Name ${rentalProduct.make}`;
         var user = await getUserById(rentalItem.createdBy);
@@ -965,8 +981,9 @@ app.post("/rental/return", verifyToken, upload.array("photos", 5), async (req, r
           .replace("[Unique Reference Number]", rentalItem._id)
           .replace("[SupportEmail]", constants.SUPPORT_EMAIL)
           .replace("[Date of Early Return]", currentDate);
-        await EmailServiceInstace.sendReviewHtmlBody(email, data, subject);
-
+          console.log("log 1.1");
+        EmailServiceInstace.sendReviewHtmlBody(email, data, subject);
+        console.log("log 2");
         //send early return email to rentor
         var _subject = `Item Early Return : Rental NO. ${rentalItem._id} Item Name ${rentalProduct.make}`;
         var _user = await getUserById(rentalProduct.postedBy);
@@ -979,8 +996,9 @@ app.post("/rental/return", verifyToken, upload.array("photos", 5), async (req, r
           .replace("[Unique Reference Number]", rentalItem._id)
           .replace("[SupportEmail]", constants.SUPPORT_EMAIL)
           .replace("[Date of Early Return]", currentDate);
-        await EmailServiceInstace.sendReviewHtmlBody(_email, _data, _subject);
-
+          console.log("log 2.1");
+        EmailServiceInstace.sendReviewHtmlBody(_email, _data, _subject);
+        console.log("after email");
       }
     }
 
@@ -991,6 +1009,7 @@ app.post("/rental/return", verifyToken, upload.array("photos", 5), async (req, r
 */
 
     //Review email notification to rentee
+    console.log("log 3");
     var subject = `Rental no. ${rentalItem._id} Item ${rentalProduct.make}`;
     var user = await getUserById(rentalItem.createdBy);
     var email = user.email;
@@ -1000,15 +1019,15 @@ app.post("/rental/return", verifyToken, upload.array("photos", 5), async (req, r
       .replace("[Item Name]", rentalProduct.make)
       .replace("[WebUrl]", constants.WEBSITE + `/review?id=${rentalItem._id}&productid=${rentalProduct._id}`)
       .replace("[ImagePath]", `${serverUrl}/${rentalProduct.photos[0]}`);
-    var results = await EmailServiceInstace.sendReviewHtmlBody(email, data, subject);
-
+    EmailServiceInstace.sendReviewHtmlBody(email, data, subject);
+    console.log("after second email");
 
     if (!earlyIndicator) {
       //Also need to send email to Rentor : TODO - NJ to provie template
       //send return email to rentor
       var _subject = `Item Return : Rental NO. ${rentalItem._id} Item Name ${rentalProduct.make}`;
       var _user = await getUserById(rentalProduct.postedBy);
-      var _email = _user.email;
+      var _email = "jomdaka@gmail.com"; //_user.email;
       var _body = await fs.readFile("./emailTemplates/torentorReturnTemplate.html");
       var _data = _body.toString();
       _data = _data.replace("[User Name]", _user.name)
@@ -1017,7 +1036,8 @@ app.post("/rental/return", verifyToken, upload.array("photos", 5), async (req, r
         .replace("[Unique Reference Number]", rentalItem._id)
         .replace("[SupportEmail]", constants.SUPPORT_EMAIL)
         .replace("[Date of Return]", currentDate);
-      await EmailServiceInstace.sendReviewHtmlBody(_email, _data, _subject);
+      EmailServiceInstace.sendReviewHtmlBody(_email, _data, _subject);
+      console.log("early returned email");
     }
 
     //var results = await EmailServiceInstace.sendCancelationEmail(email, body, subject);
@@ -1026,7 +1046,7 @@ app.post("/rental/return", verifyToken, upload.array("photos", 5), async (req, r
 
   }
   catch (error) {
-    console.error(error);
+    console.error("error on return : ",error);
     if (error instanceof mongoose.Error.ValidationError) {
       res.status(400).send({ message: "Validation error", errors: error.errors });
     } else {
@@ -1169,7 +1189,7 @@ calculateRentalCost = (item) => {
       * calculate rental costs
       */
   var currentDate = new Date();
-  return paymentService.earlyRentalReturnRefund(item.startdate, item.enddate, currentDate, item.amount);
+  return paymentService.earlyRentalReturnRefund(item.startdate, item.enddate, currentDate, item.totalamount);
 }
 
 /**

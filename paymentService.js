@@ -45,7 +45,7 @@ class PaymentService {
           //console.log("dueToRentor ", dueToRentor);
           var serviceFee = this.percentageAmountCalculator(dueToRentor, constants.SERVICE_FEE_PERC);
           //console.log("serviceFee ", serviceFee);
-          var vatAmount =  this.calculateVAT(serviceFee);
+          var vatAmount =  this.calculateVAT(dueToRentor);
           //console.log("vatAmount ", vatAmount);
           var totalDueToRentor = dueToRentor - vatAmount - serviceFee;
           //console.log("totalDueToRentor ", totalDueToRentor);
@@ -61,7 +61,7 @@ class PaymentService {
         }else{
 
           var serviceFee = this.percentageAmountCalculator(rentalamount, constants.SERVICE_FEE_PERC);
-          var vatAmount =  this.calculateVAT(serviceFee);       
+          var vatAmount =  this.calculateVAT(rentalamount);       
           var totalDueToRentor = rentalamount - vatAmount - serviceFee;
           var refundAmount = 0
 

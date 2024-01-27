@@ -97,7 +97,7 @@ app.post('/payment/notification',async (req,res)=>{
   });
 
   //console.log("transaction : ", transaction);
-
+  var _payload = JSON.stringify(payload);
   if(transaction.length == 0){
     //create a transaction
     var newTransaction = new transactionSchema({   
@@ -108,7 +108,7 @@ app.post('/payment/notification',async (req,res)=>{
       amount_gross:payload.amount_gross,
       amount_fee:payload.amount_fee,
       amount_net:payload.amount_net,
-      payfast_payload: payload.toString()
+      payfast_payload: _payload
     });
     var newTrans = await newTransaction.save();
     //console.log("newTrans : ", newTrans);
