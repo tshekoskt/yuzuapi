@@ -1203,6 +1203,51 @@ app.get('/chatsbyproduct/:productId', async (req, res) => {
   }
 });
 
+app.get('/chatsbyproduct', async (req, res) => {
+  try {
+    // Extract productId and userId from the query parameters
+    const { productId, userId } = req.query;
+
+    // Ensure both productId and userId are provided
+    if (!productId || !userId) {
+      return res.status(400).json({ error: 'Both productId and userId must be provided in the query parameters.' });
+    }
+
+    // Fetch chat messages by productId from the database
+    const chats = await Chat.find({ productId }).populate("postedBy");
+
+    if (!chats) {
+      return res.status(404).json({ error: 'No chat messages found.' });
+    }
+
+    // Filter chats where the postedBy field matches the userId
+    const filteredChats = chats.filter(chat => chat.postedBy.id === userId);
+
+    // Fetch replies for filtered chats and filter replies as well
+    const chatsWithReplies = await Promise.all(
+      filteredChats.map(async (chat) => {
+        const replies = await Chat.find({ parentId: chat._id }).populate("postedBy");
+        const filteredReplies = replies.filter(reply => reply.postedBy.id === userId);
+
+        return {
+          ...chat.toObject(),
+          replies: filteredReplies
+        };
+      })
+    );
+
+    if (chatsWithReplies.length === 0) {
+      return res.status(404).json({ error: 'No chats found for the current user.' });
+    }
+
+    res.status(200).json(chatsWithReplies);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'An error occurred while fetching the chat messages.' });
+  }
+});
+
+
 
 
 //const Chat = mongoose.model('Chat', chatSchema);
