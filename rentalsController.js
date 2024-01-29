@@ -641,19 +641,27 @@ app.post("/rental", verifyToken, async (req, res) => {
         }
       );
     }
-    //Send transaction/receipt email to user
+    //Send transaction/receipt email to rentee
     var _subject = `Rental confirmation : Order number ${ordernumber} Item name ${product.make}`;
     var _user = await getUserById(rentalItem.createdBy);
     var _email = _user.email;
-    var _body = await fs.readFile("./emailTemplates/renteeCancellationTemplate.html");
+    var _body = await fs.readFile("./emailTemplates/torenteeConfirmingRental.html");
     var _data = _body.toString();
-    _data = _data.replace("[User Name]", _user.name)
-      .replace("[Item Name]", product.make)
-      .replace("[Name of the Rental Item]", product.make)
-      .replace("[Unique Reference Number]", rentalItem._id)
-      .replace("[SupportEmail]", constants.SUPPORT_EMAIL)
-      .replace("[Date of Cancellation]", currentDate);
+    _data = _data.replace("[Rentee's Name]", _user.name)
+      .replace("[Your Order Number]", ordernumber)
+      .replace("[Total Amount Paid]", transaction.totalamount)
+      .replace("[Date and Time]", transaction.transactiondate)
      EmailServiceInstace.sendReviewHtmlBody(_email, _data, _subject);
+
+      //Send transaction/receipt email to rentee
+    var subject = `Rental confirmation : Order number ${ordernumber} Item name ${product.make}`;
+    var user = await getUserById(rentalItem.postedBy);
+    var email = _user.email;
+    var body = await fs.readFile("./emailTemplates/torentorConfirmingRental.html");
+    var data = body.toString();
+    data = data.replace("[Rentor's Name]", user.name)
+      .replace("[Your Order Number]", ordernumber)
+     EmailServiceInstace.sendReviewHtmlBody(email, data, subject);
 
 
     res.status(201).send({
