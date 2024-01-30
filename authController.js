@@ -117,8 +117,8 @@ app.post('/register', async (req, res) => {
             statusCode: 500,
             message: 'Failed to send email',
           });
-        }        
-      });    
+        }
+      });
 
       const hashedPassword = await bcrypt.hash(temporaryPassword, 10);
       newUser = new User({
@@ -162,7 +162,7 @@ app.post('/register', async (req, res) => {
           isAdmin: false,
         });
 
-        //registration confirmation email 
+        //registration confirmation email
       try{
         var subject = 'Admin Account Information';
         var body = await fs.readFile("./emailTemplates/registrationTemplate.html");
@@ -239,13 +239,13 @@ app.patch("/update-profile", async (req, res) => {
         phone: req.body.phone
       });
 
-      
+
         var subject = 'Account Information change';
         var body = await fs.readFile("./emailTemplates/accountChangeTemplate.html");
         var data = body.toString();
-        data = data.replace("[User Name]", req.body.name);       
-        var results = await EmailServiceInstace.sendReviewHtmlBody(req.body.email, data, subject);
-      
+        data = data.replace("[User Name]", req.body.name);
+        var results =  EmailServiceInstace.sendReviewHtmlBody(req.body.email, data, subject);
+
 
     res.send({
       statuscode: 200,
