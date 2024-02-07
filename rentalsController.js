@@ -655,7 +655,7 @@ app.post("/rental", verifyToken, async (req, res) => {
 
       //Send transaction/receipt email to rentee
     var subject = `Rental confirmation : Order number ${ordernumber} Item name ${product.make}`;
-    var user = await getUserById(rentalItem.postedBy);
+    var user = await getUserById(product.postedBy);
     var email = _user.email;
     var body = await fs.readFile("./emailTemplates/torentorConfirmingRental.html");
     var data = body.toString();
@@ -1087,6 +1087,8 @@ app.get("/rental/getByUserId/:id", verifyToken, async (req, res) => {
 });
 
 
+
+
 app.post(`/rental/receivedByRentee`, verifyToken, async (req, res) => {
 
   console.log("accept item", req.body);
@@ -1118,7 +1120,7 @@ app.post(`/rental/receivedByRentor`, verifyToken, async (req, res) => {
 
   try {
     const rentalItem = await RentalItem.findByIdAndUpdate(
-      { _id: req.body.id },
+      { _id: req.body._id },
       {
         receivedbyrentor: req.body.receivedbyrentor,
         modifieddate: new Date()
@@ -1127,7 +1129,8 @@ app.post(`/rental/receivedByRentor`, verifyToken, async (req, res) => {
     const rentalProduct = await getProductById(rentalItem.productId);
     //send early return email to rentee
     var subject = `Item Early Return : Rental NO. ${rentalItem._id} Item Name ${rentalProduct.make}`;
-    var user = await getUserById(rentalItem.createdBy);
+    console.log("rentalProduct.postedBy", rentalProduct.postedBy);
+    var user = await getUserById(rentalProduct.postedBy);
     var email = user.email;
     var body = await fs.readFile("./emailTemplates/torenteeConfirmingReturnTemplate.html");
     var data = body.toString();
@@ -1136,7 +1139,7 @@ app.post(`/rental/receivedByRentor`, verifyToken, async (req, res) => {
       .replace("[Name of the Rental Item]", rentalProduct.make)
       .replace("[Unique Reference Number]", rentalItem._id)
       .replace("[SupportEmail]", constants.SUPPORT_EMAIL)
-      .replace("[Date of Return]", currentDate);
+      .replace("[Date of Return]", constants.CURRENTDATE);
     await EmailServiceInstace.sendReviewHtmlBody(email, data, subject);
     return res.status(200).send({ message: "success" });
   } catch (error) {

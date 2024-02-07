@@ -261,7 +261,6 @@ app.patch("/update-profile", async (req, res) => {
   }
 });
 
-
 // Route to Validate OTP
 app.post("/validate-otp", async (req, res) => {
   try {

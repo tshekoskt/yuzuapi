@@ -11,6 +11,7 @@ const swaggerJSDoc = require('swagger-jsdoc');
 const swaggerOptions = require('./swaggerOptions');
 const cors = require("cors");
 const request = require('request');
+//const RentalProduct = require('./models/rentalProducts');
 
 
 const rental = require('./rentalsController');
@@ -183,6 +184,7 @@ const chatSchema = new mongoose.Schema({
   message: String,
   seen: Boolean,
   replyText: String,
+  postedTo: String,
   parentId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Chat",
@@ -250,7 +252,7 @@ const rentalSchema = new mongoose.Schema({
 const User = mongoose.model("User", userSchema);
 const RentalItem = mongoose.model("RentalItem", rentalItemSchema);
 const Rental = mongoose.model("Rental", rentalSchema);
-const RentalProduct = mongoose.model("RentalProduct1", rentalProductSchema);
+const RentalProduct = mongoose.model("RentalProduct", rentalProductSchema);
 const Review = mongoose.model("Review", reviewSchema);
 const Category = mongoose.model("Category", categorySchema);
 const DeliveryOption = mongoose.model("DeliveryOption", deliveryOptionsSchema);
@@ -1093,7 +1095,7 @@ app.get("/available-rental-tems", verifyToken, async (req, res) => {
 const Chat = mongoose.model('Chat', chatSchema);
 
 // POST endpoint to create a new chat message
-app.post('/chats', async (req, res) => {
+app.post('/chatss', async (req, res) => {
   try {
     // Create a new chat message based on the request body
     console.log(req.body)
@@ -1108,6 +1110,32 @@ app.post('/chats', async (req, res) => {
     });
 
     // Save the chat message to the database
+    const savedChat = await newChat.save();
+    res.status(201).json(savedChat);
+  } catch (error) {
+    res.status(500).json({ error: 'An error occurred while saving the chat message.' + error });
+  }
+});
+
+
+app.post('/chats', async (req, res) => {
+  try {
+    const product = await RentalProduct.findById(req.body.productId);
+    if (!product) {
+      return res.status(404).json({ error: 'Product not found.' });
+    }
+
+    const newChat = new Chat({
+      productId: req.body.productId,
+      message: req.body.message,
+      seen: req.body.seen,
+      replyText: req.body.replyText,
+      parentId: req.body.parentId,
+      postedDate: req.body.postedDate,
+      postedBy: req.body.postedBy,
+      postedTo: product.postedBy, // Add the postedTo field
+    });
+
     const savedChat = await newChat.save();
     res.status(201).json(savedChat);
   } catch (error) {
@@ -1143,25 +1171,77 @@ app.get('/chats/:chatId', async (req, res) => {
 });
 
 // GET endpoint to retrieve a chat message by ID
-app.get('/chatsbyuser/:userId', async (req, res) => {
-  try {
-    // Fetch a chat message by its ID from the database
-    const chats = await Chat.find({postedBy:req.params.userId,parentId: null}).populate("postedBy");
+// app.get('/chatsbyuser/:userId', async (req, res) => {
+//   try {
+//     // Fetch a chat message by its ID from the database
+//     const chats = await Chat.find({postedBy:req.params.userId,parentId: null}).populate("postedBy");
 
+//     if (!chats) {
+//       return res.status(404).json({ error: 'Chat message not found.' });
+//     }
+
+//     // Now, for each top-level chat, find and attach its replies
+//     const chatsWithReplies = await Promise.all(
+//       chats.map(async (chat) => {
+
+//         const replies = await Chat.find({ parentId: chat._id }).populate("postedBy");
+
+//         console.log(chat._id);
+
+//         return {
+//           ...chat.toObject(), // Convert Mongoose document to plain object replies
+//           replies
+//         };
+//       })
+//     );
+
+//     res.status(200).json(chatsWithReplies);
+//   } catch (error) {
+//     res.status(500).json({ error: 'An error occurred while fetching the chat message.' });
+//   }
+// });
+
+// app.get('/chatsbyuser/:userId/:productId', async (req, res) => {
+//   try {
+//     const userId = req.params.userId;
+//     const productId = req.params.productId;
+//     const chats = await Chat.find({ postedBy: userId, productId: productId, parentId: null }).populate("postedBy");
+
+//     if (!chats) {
+//       return res.status(404).json({ error: 'No chats found for this user and product.' });
+//     }
+
+//     const chatsWithReplies = await Promise.all(
+//       chats.map(async (chat) => {
+//         const replies = await Chat.find({ parentId: chat._id }).populate("postedBy");
+//         return {
+//           ...chat.toObject(),
+//           replies
+//         };
+//       })
+//     );
+
+//     res.status(200).json(chatsWithReplies);
+//   } catch (error) {
+//     res.status(500).json({ error: 'An error occurred while fetching the chat messages.' + error });
+//   }
+// });
+
+app.get('/chats/:userId/:productId', async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const productId = req.params.productId;
+    let chats = await Chat.find({ postedTo: userId, product: productId });
     if (!chats) {
-      return res.status(404).json({ error: 'Chat message not found.' });
+      return res.status(404).json({ error: 'No chats found for this user.' });
     }
 
-    // Now, for each top-level chat, find and attach its replies
+    // Fetch replies for each chat
     const chatsWithReplies = await Promise.all(
       chats.map(async (chat) => {
-
         const replies = await Chat.find({ parentId: chat._id }).populate("postedBy");
-
-        console.log(chat._id);
-
         return {
-          ...chat.toObject(), // Convert Mongoose document to plain object replies
+          ...chat.toObject(),
           replies
         };
       })
@@ -1169,7 +1249,53 @@ app.get('/chatsbyuser/:userId', async (req, res) => {
 
     res.status(200).json(chatsWithReplies);
   } catch (error) {
-    res.status(500).json({ error: 'An error occurred while fetching the chat message.' });
+    res.status(500).json({ error: 'An error occurred while fetching the chat messages.' + error });
+  }
+});
+
+app.get('/chatsss/:userId/:productId', async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const productId = req.params.productId;
+    let chats = await Chat.find({ postedBy: userId, product: productId });
+    if (!chats) {
+      return res.status(404).json({ error: 'No chats found for this user.' });
+    }
+
+    // Fetch replies for each chat
+    const chatsWithReplies = await Promise.all(
+      chats.map(async (chat) => {
+        const replies = await Chat.find({ parentId: chat._id }).populate("postedBy");
+        return {
+          ...chat.toObject(),
+          replies
+        };
+      })
+    );
+
+    res.status(200).json(chatsWithReplies);
+  } catch (error) {
+    res.status(500).json({ error: 'An error occurred while fetching the chat messages.' + error });
+  }
+});
+
+app.get("/products/getById/:id", async (req, res) => {
+  try {
+    console.log("product id", req.params.id);
+    const rentalProduct = await RentalProduct.findById({ _id: req.params.id });
+    if (!rentalProduct) {
+      return res.status(400).send("Product item not found");
+    }
+
+    res.send(rentalProduct);
+  } catch (error) {
+    console.error(error);
+    if (error instanceof mongoose.Error.ValidationError) {
+      res.status(400).send({ message: "Validation error", errors: error.errors });
+    } else {
+      res.status(500).send({ message: "Server error", error: error.errors });
+      console.log("error message", error);
+    }
   }
 });
 
