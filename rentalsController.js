@@ -651,17 +651,17 @@ app.post("/rental", verifyToken, async (req, res) => {
       .replace("[Your Order Number]", ordernumber)
       .replace("[Total Amount Paid]", transaction.totalamount)
       .replace("[Date and Time]", transaction.transactiondate)
-     EmailServiceInstace.sendReviewHtmlBody(_email, _data, _subject);
+    EmailServiceInstace.sendReviewHtmlBody(_email, _data, _subject);
 
-      //Send transaction/receipt email to rentee
+    //Send transaction/receipt email to rentee
     var subject = `Rental confirmation : Order number ${ordernumber} Item name ${product.make}`;
-    var user = await getUserById(rentalItem.postedBy);
+    var user = await getUserById(product.postedBy);
     var email = _user.email;
     var body = await fs.readFile("./emailTemplates/torentorConfirmingRental.html");
     var data = body.toString();
     data = data.replace("[Rentor's Name]", user.name)
       .replace("[Your Order Number]", ordernumber)
-     EmailServiceInstace.sendReviewHtmlBody(email, data, subject);
+    EmailServiceInstace.sendReviewHtmlBody(email, data, subject);
 
 
     res.status(201).send({
@@ -989,7 +989,7 @@ app.post("/rental/return", verifyToken, upload.array("photos", 5), async (req, r
           .replace("[Unique Reference Number]", rentalItem._id)
           .replace("[SupportEmail]", constants.SUPPORT_EMAIL)
           .replace("[Date of Early Return]", currentDate);
-          console.log("log 1.1");
+        console.log("log 1.1");
         EmailServiceInstace.sendReviewHtmlBody(email, data, subject);
         console.log("log 2");
         //send early return email to rentor
@@ -1004,7 +1004,7 @@ app.post("/rental/return", verifyToken, upload.array("photos", 5), async (req, r
           .replace("[Unique Reference Number]", rentalItem._id)
           .replace("[SupportEmail]", constants.SUPPORT_EMAIL)
           .replace("[Date of Early Return]", currentDate);
-          console.log("log 2.1");
+        console.log("log 2.1");
         EmailServiceInstace.sendReviewHtmlBody(_email, _data, _subject);
         console.log("after email");
       }
@@ -1054,7 +1054,7 @@ app.post("/rental/return", verifyToken, upload.array("photos", 5), async (req, r
 
   }
   catch (error) {
-    console.error("error on return : ",error);
+    console.error("error on return : ", error);
     if (error instanceof mongoose.Error.ValidationError) {
       res.status(400).send({ message: "Validation error", errors: error.errors });
     } else {
@@ -1075,6 +1075,33 @@ app.get("/rental/getByUserId/:id", verifyToken, async (req, res) => {
     }
 
     res.send(rentalItem);
+  } catch (error) {
+    console.error(error);
+    if (error instanceof mongoose.Error.ValidationError) {
+      res.status(400).send({ message: "Validation error", errors: error.errors });
+    } else {
+      res.status(500).send({ message: "Server error", error: error.errors });
+      console.log("error message", error);
+    }
+  }
+});
+
+
+app.get("/rental/getByRentorId/:id", verifyToken, async (req, res) => {
+  try {
+    const rentalItems = await RentalItem.find({ "createdBy": req.params.id }).populate('productId');
+    if (!rentalItems) {
+      return res.status(400).send("Rental item(s) not found");
+    }
+
+    const rentorDetails = rentalItems.map(item => {
+      return {
+        ...item.toObject(),
+        createdBy: item.productId.postedBy
+      };
+    });
+
+    res.send(rentorDetails);
   } catch (error) {
     console.error(error);
     if (error instanceof mongoose.Error.ValidationError) {
@@ -1118,7 +1145,7 @@ app.post(`/rental/receivedByRentor`, verifyToken, async (req, res) => {
 
   try {
     const rentalItem = await RentalItem.findByIdAndUpdate(
-      { _id: req.body.id },
+      { _id: req.body._id },
       {
         receivedbyrentor: req.body.receivedbyrentor,
         modifieddate: new Date()
@@ -1127,7 +1154,8 @@ app.post(`/rental/receivedByRentor`, verifyToken, async (req, res) => {
     const rentalProduct = await getProductById(rentalItem.productId);
     //send early return email to rentee
     var subject = `Item Early Return : Rental NO. ${rentalItem._id} Item Name ${rentalProduct.make}`;
-    var user = await getUserById(rentalItem.createdBy);
+    console.log("rentalProduct.postedBy", rentalProduct.postedBy);
+    var user = await getUserById(rentalProduct.postedBy);
     var email = user.email;
     var body = await fs.readFile("./emailTemplates/torenteeConfirmingReturnTemplate.html");
     var data = body.toString();
@@ -1136,7 +1164,7 @@ app.post(`/rental/receivedByRentor`, verifyToken, async (req, res) => {
       .replace("[Name of the Rental Item]", rentalProduct.make)
       .replace("[Unique Reference Number]", rentalItem._id)
       .replace("[SupportEmail]", constants.SUPPORT_EMAIL)
-      .replace("[Date of Return]", currentDate);
+      .replace("[Date of Return]", constants.CURRENTDATE);
     await EmailServiceInstace.sendReviewHtmlBody(email, data, subject);
     return res.status(200).send({ message: "success" });
   } catch (error) {

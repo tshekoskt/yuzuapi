@@ -7,5 +7,6 @@ module.exports = Object.freeze({
     VAT:15,
     WEBSITE: 'http://localhost:4200',
     SUPPORT_EMAIL: "yuzuxapp@gmail.com",
-    CANCELLATION_ADMIN_FEE_PERC: 2
+    CANCELLATION_ADMIN_FEE_PERC: 2,
+    CURRENTDATE: new Date().toISOString().slice(0, 10),
 });

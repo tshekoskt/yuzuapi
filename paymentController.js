@@ -11,9 +11,9 @@ const transactionSchema = require("./models/transaction");
 app.use(cors({
     origin:'*'
   }));
-  
+
   app.use(bodyParser.json({limit: '35mb'}));
-  
+
   app.use(
     bodyParser.urlencoded({
       extended: true,
@@ -21,7 +21,7 @@ app.use(cors({
       parameterLimit: 50000,
     }),
   );
-  
+
   const verifyToken = (req, res, next) => {
     const bearerHeader = req.headers["authorization"];
     if (!bearerHeader) {
@@ -44,7 +44,7 @@ app.use(cors({
 
 
 app.get('/payment/notification',async (req,res)=>{
-  res.status(200);  
+  res.status(200);
   console.log("payload req : ", req);
   console.log("payload body : ", req.body);
   var payload = req.body;
@@ -57,8 +57,8 @@ app.get('/payment/notification',async (req,res)=>{
 
   if(transaction.length == 0){
     //create a transaction
-    var newTransaction = new transactionSchema({   
-      transactiondate:new Date(),  
+    var newTransaction = new transactionSchema({
+      transactiondate:new Date(),
       ordernumber:payload.m_payment_id,
       payfastid:payload.pf_payment_id,
       payment_status:payload.payment_status,
@@ -69,15 +69,15 @@ app.get('/payment/notification',async (req,res)=>{
     await newTransaction.save();
 
   }else{
-    //update transaction    
+    //update transaction
     transaction.payfastid = payload.pf_payment_id;
     transaction.payment_status = payload.payment_status;
     transaction.amount_gross = payload.amount_gross;
     transaction.amount_fee = payload.amount_fee;
-    transaction.amount_net = payload.amount_net;   
+    transaction.amount_net = payload.amount_net;
     await transaction.save();
   }
-  
+
 })
  */
 
@@ -86,7 +86,7 @@ app.get('/payment/notification',async (req,res)=>{
  */
 
 app.post('/payment/notification',async (req,res)=>{
-  res.status(200);  
+  res.status(200);
   //console.log("payload body : ", req.body);
   var payload = req.body;
 
@@ -100,8 +100,8 @@ app.post('/payment/notification',async (req,res)=>{
   var _payload = JSON.stringify(payload);
   if(transaction.length == 0){
     //create a transaction
-    var newTransaction = new transactionSchema({   
-      transactiondate:new Date(),  
+    var newTransaction = new transactionSchema({
+      transactiondate:new Date(),
       ordernumber:payload.m_payment_id,
       payfastid:payload.pf_payment_id,
       payment_status:payload.payment_status,
@@ -114,12 +114,12 @@ app.post('/payment/notification',async (req,res)=>{
     //console.log("newTrans : ", newTrans);
 
   }else{
-    //update transaction    
+    //update transaction
     transaction.payfastid = payload.pf_payment_id;
     transaction.payment_status = payload.payment_status;
     transaction.amount_gross = payload.amount_gross;
     transaction.amount_fee = payload.amount_fee;
-    transaction.amount_net = payload.amount_net;   
+    transaction.amount_net = payload.amount_net;
     await transaction.save();
     //console.log("update transaction : ", transaction);
   }
@@ -141,17 +141,17 @@ app.post('/payment/notification',async (req,res)=>{
   /**
  * get payment transaction by order number
  */
-  app.get('/payment/:ordernumber',verifyToken, async (req,res)=>{
+  app.get('/payment/:ordernumber', async (req,res)=>{
     try{
       //get transaction
       var _ordernumber = req.params.ordernumber;
       var transaction = await transactionSchema.find({
         ordernumber: _ordernumber
       });
-      
+
       if(!transaction)
          res.status(400).send("Item not found");
-       
+
       res.status(200).send(transaction);
 
     }catch(error){
@@ -172,13 +172,13 @@ app.post('/payment/notification',async (req,res)=>{
   }
 
   /**
-   * RIRP-05 - The Rentee will be entitled to 50% 
-   * 
-   * @param {*} startdate 
-   * @param {*} enddate 
-   * @param {*} datereturned 
-   * @param {*} rentalamount 
-   * @returns 
+   * RIRP-05 - The Rentee will be entitled to 50%
+   *
+   * @param {*} startdate
+   * @param {*} enddate
+   * @param {*} datereturned
+   * @param {*} rentalamount
+   * @returns
    */
   const earlyRentalReturnRefund = (startdate,enddate,datereturned, rentalamount) =>{
         var totalRentalDays = dateDifferenceInDays(startdate, enddate);
@@ -191,16 +191,16 @@ app.post('/payment/notification',async (req,res)=>{
   }
 
   const dateDifferenceInDays = (startdt, enddt)=>{
-    
+
     if(startdt == enddt)
       return 1;
 
     const MS_PER_DAY = 1000 * 60 * 60 * 24;
-      
+
       var enddate = new Date(enddt);
       var stardate = new Date(startdt);
-      var utcEnd = Date.UTC(enddate.getFullYear(), enddate.getMonth(), enddate.getDate()) 
-      var utcStart = Date.UTC(stardate.getFullYear(), stardate.getMonth(), stardate.getDate()) 
+      var utcEnd = Date.UTC(enddate.getFullYear(), enddate.getMonth(), enddate.getDate())
+      var utcStart = Date.UTC(stardate.getFullYear(), stardate.getMonth(), stardate.getDate())
       return Math.floor((utcEnd - utcStart)/MS_PER_DAY);
   }
 
