@@ -16,6 +16,7 @@ const RentalItem = require('./models/rental');
 const RentalProduct = require('./models/rentalProducts');
 const userSchema = require('./models/user');
 const transactionSchema = require('./models/transaction');
+const accountSchema = require('./models/account');
 const EmailService = require('./emailService');
 const EmailServiceInstace = new EmailService();
 const PaymentService = require("./paymentService");
@@ -755,6 +756,34 @@ app.post("/rental/cancel", verifyToken, async (req, res) => {
         }
       );
 
+      let account = getRentorAccount(rentalProduct.postedBy);
+      
+      if(!account){
+        let newAccount = new accountSchema({
+        description: "Cancel Rental",
+        oldbalance: 0,
+        amount:amountsResults.totalDueToRentor,
+        newbalance:amountsResults.totalDueToRentor,
+        transactiondate:currentDate
+        });
+
+        await newAccount.save();
+      }else{
+        let latestAccount = account[0];
+        let transactionAmount =  (parseFloat(latestAccount.newbalance)) + (parseFloat(amountsResults.totalDueToRentor));
+        let newAccount = new accountSchema ({
+          description:"Cancel Rental",
+          oldbalance:latestAccount.newbalance,
+          amount:amountsResults.totalDueToRentor,
+          newbalance:transactionAmount,
+          transactiondate:currentDate
+        })
+        await newAccount.save();
+      }
+
+
+
+
       if (amountsResults.renteerefund > 0) {
         //create refund transaction entry
         //var refundtransactionItem = refundTransaction(transaction);
@@ -859,6 +888,31 @@ app.post("/rental/cancelByRentor", verifyToken, async (req, res) => {
           renteerefund: amountsResults.renteeRefund
         }
       );
+
+      let account = getRentorAccount(rentalProduct.postedBy);
+      
+      if(!account){
+        let newAccount = new accountSchema({
+        description: "Rentor Cancel",
+        oldbalance: 0,
+        amount:amountsResults.totalDueToRentor,
+        newbalance:amountsResults.totalDueToRentor,
+        transactiondate:currentDate
+        });
+
+        await newAccount.save();
+      }else{
+        let latestAccount = account[0];
+        let transactionAmount =  (parseFloat(latestAccount.newbalance)) + (parseFloat(amountsResults.totalDueToRentor));
+        let newAccount = new accountSchema ({
+          description:"Rentor Cancel",
+          oldbalance:latestAccount.newbalance,
+          amount:amountsResults.totalDueToRentor,
+          newbalance:transactionAmount,
+          transactiondate:currentDate
+        })
+        await newAccount.save();
+      }
 
       /*if (amountsResults.renteerefund > 0) {
         //create refund transaction entry
@@ -970,6 +1024,30 @@ app.post("/rental/return", verifyToken, upload.array("photos", 5), async (req, r
         }
       );
 
+      let account = getRentorAccount(rentalProduct.postedBy);
+      
+      if(!account){
+        let newAccount = new accountSchema({
+        description: "Rental",
+        oldbalance: 0,
+        amount:amountsResults.totalDueToRentor,
+        newbalance:amountsResults.totalDueToRentor,
+        transactiondate:currentDate
+        });
+
+        await newAccount.save();
+      }else{
+        let latestAccount = account[0];
+        let transactionAmount =  (parseFloat(latestAccount.newbalance)) + (parseFloat(amountsResults.totalDueToRentor));
+        let newAccount = new accountSchema ({
+          description:"Rental",
+          oldbalance:latestAccount.newbalance,
+          amount:amountsResults.totalDueToRentor,
+          newbalance:transactionAmount,
+          transactiondate:currentDate
+        })
+        await newAccount.save();
+      }
 
       if (amountsResults.renteeRefund > 0) {
         earlyIndicator = true;
@@ -1259,5 +1337,18 @@ refundTransaction = (transaction) => {
 
   return item;
 
+}
+
+/**
+ * Get from Account
+ */
+getRentorAccount(userId){
+  let account = await accountSchema.find({
+    'rentor':userId
+  }).sort(
+    {'transactiondate' :2}
+  );
+
+  return account;
 }
 module.exports = app;
