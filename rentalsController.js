@@ -69,7 +69,7 @@ app.get("/testendpoint", async (req,res)=>{
   .replace("[ImagePath]", serverUrl);
 
   console.log("review email body", data);
-  var results = await EmailServiceInstace.sendReviewHtmlBody("jomdaka@gmail.com", data, "Testing Email");
+  var results = await EmailServiceInstace.sendReviewHtmlBody("address@email.com", data, "Testing Email");
   console.log("Email results: ", results);
   res.send(data);
 });*/
@@ -656,7 +656,7 @@ app.post("/rental", verifyToken, async (req, res) => {
     //Send transaction/receipt email to rentee
     var subject = `Rental confirmation : Order number ${ordernumber} Item name ${product.make}`;
     var user = await getUserById(product.postedBy);
-    var email = _user.email;
+    var email = user.email;
     var body = await fs.readFile("./emailTemplates/torentorConfirmingRental.html");
     var data = body.toString();
     data = data.replace("[Rentor's Name]", user.name)
@@ -1035,7 +1035,7 @@ app.post("/rental/return", verifyToken, upload.array("photos", 5), async (req, r
       //send return email to rentor
       var _subject = `Item Return : Rental NO. ${rentalItem._id} Item Name ${rentalProduct.make}`;
       var _user = await getUserById(rentalProduct.postedBy);
-      var _email = "jomdaka@gmail.com"; //_user.email;
+      var _email = _user.email; 
       var _body = await fs.readFile("./emailTemplates/torentorReturnTemplate.html");
       var _data = _body.toString();
       _data = _data.replace("[User Name]", _user.name)

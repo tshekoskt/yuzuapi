@@ -97,7 +97,7 @@ class PaymentService {
 
 
     var serviceFee = this.percentageAmountCalculator(rentalamount, constants.CANCELLATION_ADMIN_FEE_PERC);
-    var vatAmount = this.calculateVAT(serviceFee);
+    var vatAmount = 0 ; //this.calculateVAT(serviceFee);
     var totalDueToRentor = - 1 * (vatAmount + serviceFee);
     var refundAmount = rentalamount;
 
