@@ -1348,7 +1348,7 @@ refundTransaction = (transaction) => {
 /**
  * Get from Account
  */
-getRentorAccount(userId){
+getRentorAccount = async (userId)=>{
   let account = await accountSchema.find({
     'rentor':userId
   }).sort(
@@ -1357,4 +1357,5 @@ getRentorAccount(userId){
 
   return account;
 }
+
 module.exports = app;
