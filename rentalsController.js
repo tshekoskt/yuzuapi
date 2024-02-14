@@ -764,7 +764,8 @@ app.post("/rental/cancel", verifyToken, async (req, res) => {
         oldbalance: 0,
         amount:amountsResults.totalDueToRentor,
         newbalance:amountsResults.totalDueToRentor,
-        transactiondate:currentDate
+        transactiondate:currentDate,
+        ordernumber: rentalItem.ordernumber
         });
 
         await newAccount.save();
@@ -776,7 +777,8 @@ app.post("/rental/cancel", verifyToken, async (req, res) => {
           oldbalance:latestAccount.newbalance,
           amount:amountsResults.totalDueToRentor,
           newbalance:transactionAmount,
-          transactiondate:currentDate
+          transactiondate:currentDate,
+          ordernumber: rentalItem.ordernumber
         })
         await newAccount.save();
       }
@@ -897,7 +899,8 @@ app.post("/rental/cancelByRentor", verifyToken, async (req, res) => {
         oldbalance: 0,
         amount:amountsResults.totalDueToRentor,
         newbalance:amountsResults.totalDueToRentor,
-        transactiondate:currentDate
+        transactiondate:currentDate,
+        ordernumber: rentalItem.ordernumber
         });
 
         await newAccount.save();
@@ -909,7 +912,8 @@ app.post("/rental/cancelByRentor", verifyToken, async (req, res) => {
           oldbalance:latestAccount.newbalance,
           amount:amountsResults.totalDueToRentor,
           newbalance:transactionAmount,
-          transactiondate:currentDate
+          transactiondate:currentDate,
+          ordernumber: rentalItem.ordernumber
         })
         await newAccount.save();
       }
@@ -1032,7 +1036,8 @@ app.post("/rental/return", verifyToken, upload.array("photos", 5), async (req, r
         oldbalance: 0,
         amount:amountsResults.totalDueToRentor,
         newbalance:amountsResults.totalDueToRentor,
-        transactiondate:currentDate
+        transactiondate:currentDate,
+        ordernumber: rentalItem.ordernumber
         });
 
         await newAccount.save();
@@ -1044,7 +1049,8 @@ app.post("/rental/return", verifyToken, upload.array("photos", 5), async (req, r
           oldbalance:latestAccount.newbalance,
           amount:amountsResults.totalDueToRentor,
           newbalance:transactionAmount,
-          transactiondate:currentDate
+          transactiondate:currentDate,
+          ordernumber: rentalItem.ordernumber
         })
         await newAccount.save();
       }

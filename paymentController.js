@@ -7,6 +7,7 @@ const cors = require("cors");
 const constants = require("./constants");
 const math = require('math');
 const transactionSchema = require("./models/transaction");
+const accountSchema = require('./models/account');
 
 app.use(cors({
     origin:'*'
@@ -141,7 +142,7 @@ app.post('/payment/notification',async (req,res)=>{
   /**
  * get payment transaction by order number
  */
-  app.get('/payment/:ordernumber', async (req,res)=>{
+  app.get('/payment/:ordernumber',verifyToken, async (req,res)=>{
     try{
       //get transaction
       var _ordernumber = req.params.ordernumber;
@@ -153,6 +154,27 @@ app.post('/payment/notification',async (req,res)=>{
          res.status(400).send("Item not found");
 
       res.status(200).send(transaction);
+
+    }catch(error){
+        res.status(400).send(error);
+    }
+  });
+
+  /**
+ * get rentor's balance
+ */
+  app.post('/payment/account',verifyToken, async (req,res)=>{
+    try{
+      //get transaction
+      var userId = req.body.userid;
+      var account = await accountSchema.find({
+        rentor: userId
+      }).sort({"transactiondate":2});
+
+      if(!account)
+         res.status(400).send("Item not found");
+
+      res.status(200).send(account);
 
     }catch(error){
         res.status(400).send(error);
