@@ -1350,7 +1350,7 @@ refundTransaction = (transaction) => {
  */
 getRentorAccount = async (userId)=>{
   let account = await accountSchema.find({
-    'rentor':userId
+    rentor:userId
   }).sort(
     {transactiondate :-1}
   );

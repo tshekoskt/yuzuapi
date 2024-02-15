@@ -9,7 +9,8 @@ const accountSchema = new mongoose.Schema({
     rentor: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
-    }
+    },
+    ordernumber: String,
 });
 
 module.exports = mongoose.model('Account', accountSchema); 
