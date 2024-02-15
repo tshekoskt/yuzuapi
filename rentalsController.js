@@ -756,9 +756,9 @@ app.post("/rental/cancel", verifyToken, async (req, res) => {
         }
       );
 
-      let account = getRentorAccount(rentalProduct.postedBy);
+      let account = await getRentorAccount(rentalProduct.postedBy);
       
-      if(!account){
+      if(account.length == 0){
         let newAccount = new accountSchema({
         description: "Cancel Rental",
         oldbalance: 0,
@@ -891,9 +891,9 @@ app.post("/rental/cancelByRentor", verifyToken, async (req, res) => {
         }
       );
 
-      let account = getRentorAccount(rentalProduct.postedBy);
+      let account = await getRentorAccount(rentalProduct.postedBy);
       
-      if(!account){
+      if(account.length == 0){
         let newAccount = new accountSchema({
         description: "Rentor Cancel",
         oldbalance: 0,
@@ -1028,9 +1028,9 @@ app.post("/rental/return", verifyToken, upload.array("photos", 5), async (req, r
         }
       );
 
-      let account = getRentorAccount(rentalProduct.postedBy);
-      
-      if(!account){
+      let account = await getRentorAccount(rentalProduct.postedBy);
+      //console.log("what is the value of account :", account);
+      if(account.length == 0){
         let newAccount = new accountSchema({
         description: "Rental",
         oldbalance: 0,
@@ -1352,7 +1352,7 @@ getRentorAccount = async (userId)=>{
   let account = await accountSchema.find({
     'rentor':userId
   }).sort(
-    {'transactiondate' :2}
+    {transactiondate :-1}
   );
 
   return account;

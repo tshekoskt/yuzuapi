@@ -169,7 +169,7 @@ app.post('/payment/notification',async (req,res)=>{
       var userId = req.body.userid;
       var account = await accountSchema.find({
         rentor: userId
-      }).sort({"transactiondate":2});
+      }).sort({"transactiondate":-1});
 
       if(!account)
          res.status(400).send("Item not found");
