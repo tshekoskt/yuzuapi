@@ -765,7 +765,8 @@ app.post("/rental/cancel", verifyToken, async (req, res) => {
         amount:amountsResults.totalDueToRentor,
         newbalance:amountsResults.totalDueToRentor,
         transactiondate:currentDate,
-        ordernumber: rentalItem.ordernumber
+        ordernumber: rentalItem.ordernumber,
+        rentor:rentalProduct.postedBy
         });
 
         await newAccount.save();
@@ -778,7 +779,8 @@ app.post("/rental/cancel", verifyToken, async (req, res) => {
           amount:amountsResults.totalDueToRentor,
           newbalance:transactionAmount,
           transactiondate:currentDate,
-          ordernumber: rentalItem.ordernumber
+          ordernumber: rentalItem.ordernumber,
+          rentor:rentalProduct.postedBy
         })
         await newAccount.save();
       }
@@ -900,7 +902,8 @@ app.post("/rental/cancelByRentor", verifyToken, async (req, res) => {
         amount:amountsResults.totalDueToRentor,
         newbalance:amountsResults.totalDueToRentor,
         transactiondate:currentDate,
-        ordernumber: rentalItem.ordernumber
+        ordernumber: rentalItem.ordernumber,
+        rentor:rentalProduct.postedBy
         });
 
         await newAccount.save();
@@ -913,7 +916,8 @@ app.post("/rental/cancelByRentor", verifyToken, async (req, res) => {
           amount:amountsResults.totalDueToRentor,
           newbalance:transactionAmount,
           transactiondate:currentDate,
-          ordernumber: rentalItem.ordernumber
+          ordernumber: rentalItem.ordernumber,
+          rentor:rentalProduct.postedBy
         })
         await newAccount.save();
       }
@@ -1037,7 +1041,8 @@ app.post("/rental/return", verifyToken, upload.array("photos", 5), async (req, r
         amount:amountsResults.totalDueToRentor,
         newbalance:amountsResults.totalDueToRentor,
         transactiondate:currentDate,
-        ordernumber: rentalItem.ordernumber
+        ordernumber: rentalItem.ordernumber,
+        rentor:rentalProduct.postedBy
         });
 
         await newAccount.save();
@@ -1050,7 +1055,8 @@ app.post("/rental/return", verifyToken, upload.array("photos", 5), async (req, r
           amount:amountsResults.totalDueToRentor,
           newbalance:transactionAmount,
           transactiondate:currentDate,
-          ordernumber: rentalItem.ordernumber
+          ordernumber: rentalItem.ordernumber,
+          rentor:rentalProduct.postedBy
         })
         await newAccount.save();
       }
