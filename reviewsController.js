@@ -173,6 +173,28 @@ app.get("/get-reviews/:productId", async (req, res) => {
   }
 });
 
+app.get("/rental/average-rating/:productId", async (req, res) => {
+  try {
+    const rentalProduct = await RentalProduct.findOne({ _id: req.params.productId });
+
+    if (!rentalProduct) {
+      return res.status(404).send("Product not found");
+    }
+
+    if (rentalProduct.reviewComments.length === 0) {
+      return res.status(200).send("No reviews found for this product");
+    }
+
+    const totalRating = rentalProduct.reviewComments.reduce((total, review) => total + review.rating, 0);
+    const averageRating = totalRating / rentalProduct.reviewComments.length;
+
+    res.status(200).json({ averageRating });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Internal Server Error");
+  }
+});
+
 
 
 module.exports = app;
