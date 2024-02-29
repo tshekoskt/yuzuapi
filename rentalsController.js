@@ -43,9 +43,11 @@ const serverUrl = "http://144.126.196.146:3000"; // Replace with your server's U
 //const serverUrl = "http://localhost:3000"; // Replace with your server's URL
 
 const verifyToken = (req, res, next) => {
+
+  console.info("why are you calling me");
   const bearerHeader = req.headers["authorization"];
   if (!bearerHeader) {
-    return res.status(401).send("Access Denied");
+   return res.status(401).send("Access Denied");
   }
   const bearer = bearerHeader.split(" ");
   const bearerToken = bearer[1];
@@ -325,7 +327,7 @@ app.delete('/delete-rental-item/:itemId', async (req, res) => {
 app.get("/rentals", async (req, res) => {
   try {
     // Add your logic here to fetch all rental items or perform any other operations
-
+    console.info("getting rentals");
     // Example response
     const rentalItems = await RentalProduct.find();
     res.status(200).send({ message: "All rental items retrieved successfully", rentalItems });
@@ -334,9 +336,6 @@ app.get("/rentals", async (req, res) => {
     res.status(500).send({ message: "Server error", error });
   }
 });
-
-
-
 
 
 // Route to Rent an Item
@@ -1267,6 +1266,68 @@ app.post(`/rental/receivedByRentor`, verifyToken, async (req, res) => {
     }
   }
 
+});
+
+/**
+ * Get All transaction from previous year to current
+ */
+app.get("/getRentalsfromPreviousYearToCurrent", async (req,res) => {
+  console.warn('inside getRentalsfromPreviousYearToCurrent');
+  try{
+    
+    var previousYear = (new Date().getFullYear()) - 1;
+    console.log("previous year :", previousYear);
+   
+    let dataSummary = [];
+      
+    var rentals = await RentalItem.find({
+      $expr: {
+        $gte: [
+          {
+            $year: "$createddate"
+          },
+          previousYear
+        ]
+      }
+    }).sort({"createddate":1});
+    
+    //console.log("rentals : ", rentals);
+
+    if(rentals.length > 0){
+      rentals.forEach(element => {
+        let _year = new Date(element.createddate).getFullYear();
+        let _month = new Date(element.createddate).getMonth() + 1;
+        let _day = new Date(element.createddate).getDate();
+
+        if(dataSummary.length == 0){
+          dataSummary.push({
+            year: _year,
+            month: _month,
+            day: _day,
+            amount: parseFloat(element.totalamount)
+          })
+        }else{
+          let indexOf = dataSummary.findIndex(x=> x.year == _year && x.month == _month && x.day == _day);
+          if(indexOf == -1){
+            dataSummary.push({
+              year: _year,
+              month: _month,
+              day: _day,
+              amount: parseFloat(element.totalamount)
+            })
+          }else{
+            dataSummary[indexOf].amount = parseFloat(dataSummary[indexOf].amount) + parseFloat(element.totalamount);
+          }
+        }
+      });
+      res.status(200).send(dataSummary);
+    }else{
+    res.status(200).send(rentals);
+    }
+  }catch(err){
+    console.log("getFromPreviousYearRentals -  :", err);
+    res.status(500).send({ message: "Server error", error: err.errors });
+  }
 });
 
 /*****************************************

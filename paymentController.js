@@ -181,6 +181,86 @@ app.post('/payment/notification',async (req,res)=>{
     }
   });
 
+  /**
+ * Get All transaction from previous year to current
+ */
+app.get("/getTransactionsFromPreviousYearToCurrent", async (req,res)=>{
+  try{
+    var previousYear = (new Date().getFullYear()) - 1;
+    console.log("previous year :", previousYear);
+    let dataSummary = [];
+   
+    var transactions = await transactionSchema.find({
+      $expr: {
+        $gte: [
+          {
+            $year: "$transactiondate"
+          },
+          previousYear
+        ]
+      }
+    }).sort({"transactiondate":1});
+
+    //console.log("transactions : ", transactions);
+
+    if(transactions.length > 0){
+      transactions.forEach(element => {
+        let _year = new Date(element.transactiondate).getFullYear();
+        let _month = new Date(element.transactiondate).getMonth() + 1;
+        let _day = new Date(element.transactiondate).getDate();
+
+        if(dataSummary.length == 0){
+          dataSummary.push({
+            "year": _year,
+            month: _month,
+            day: _day,
+            servicefee: parseFloat(element.servicefee),
+            renteerefund: parseFloat(element.renteerefund),
+            vatamount:  parseFloat(element.vatamount),
+            duetorentor:  parseFloat(element.duetorentor),
+            totalamount:  parseFloat(element.totalamount),
+            amount_gross: parseFloat(element.amount_gross),
+            amount_fee: parseFloat(element.amount_fee),
+            amount_net: parseFloat(element.amount_net)
+          })
+        }else{
+          let indexOf = dataSummary.findIndex(x=> x.year == _year && x.month == _month && x.day == _day);
+          if(indexOf == -1){
+            dataSummary.push({
+              "year": _year,
+              month: _month,
+              day: _day,
+              servicefee:  parseFloat(element.servicefee),
+              renteerefund: parseFloat(element.renteerefund),
+              vatamount:  parseFloat(element.vatamount),
+              duetorentor:  parseFloat(element.duetorentor),
+              totalamount:  parseFloat(element.totalamount),
+              amount_gross: parseFloat(element.amount_gross),
+              amount_fee: parseFloat(element.amount_fee),
+              amount_net: parseFloat(element.amount_net)
+            })
+          }else{
+            dataSummary[indexOf].totalamount =  parseFloat(dataSummary[indexOf].totalamount) +  parseFloat(element.totalamount);
+            dataSummary[indexOf].servicefee =  parseFloat(dataSummary[indexOf].servicefee) +  parseFloat(element.servicefee);
+            dataSummary[indexOf].renteerefund =  parseFloat(dataSummary[indexOf].renteerefund) +  parseFloat(element.renteerefund);
+            dataSummary[indexOf].vatamount =  parseFloat(dataSummary[indexOf].vatamount) +  parseFloat(element.vatamount);
+            dataSummary[indexOf].duetorentor =  parseFloat(dataSummary[indexOf].duetorentor) +  parseFloat(element.duetorentor);
+            dataSummary[indexOf].amount_gross =  parseFloat(dataSummary[indexOf].amount_gross) +  parseFloat(element.amount_gross);
+            dataSummary[indexOf].amount_fee =  parseFloat(dataSummary[indexOf].amount_fee) +  parseFloat(element.amount_fee);
+            dataSummary[indexOf].amount_net =  parseFloat(dataSummary[indexOf].amount_net) +  parseFloat(element.amount_net);
+          }
+        }
+      });
+      res.status(200).send(dataSummary);
+    }else{
+    res.status(200).send(transactions);
+    }
+  }catch(err){
+    console.log("getFromPreviousYearTransactions -  :", err);
+    res.status(500).send({ message: "Server error", error: err.errors });
+  }
+});
+
 
   /**
    * Helper methods
