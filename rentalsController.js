@@ -1330,6 +1330,7 @@ app.get("/getRentalsfromPreviousYearToCurrent", async (req,res) => {
   }
 });
 
+
 /*****************************************
  * PRODUCTS
  *****************************************/
