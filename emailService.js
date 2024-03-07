@@ -34,6 +34,22 @@ class EmailService {
     }
   }
 
+  async sendRentalUpdateEmail(name, email, data, subject) {
+    const mailOptions = {
+      from: constants.YUZU_EMAIL, // sender address
+      to: email, // receiver address
+      subject: subject, // Subject line
+      html: data // html body
+    };
+
+    try {
+      let info = await this.transporter.sendMail(mailOptions);
+      console.log('Message sent: %s', info.messageId);
+    } catch (error) {
+      console.error('Error occurred while sending email:', error);
+    }
+  }
+
   async sendEmail(options) {
     try {
       const info = await this.transporter.sendMail(options);

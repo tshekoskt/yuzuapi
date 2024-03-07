@@ -166,32 +166,66 @@ app.post("/product/post-query", async (req, res) => { //post query
 });
 
 
-app.patch("/product/update-rental", async (req, res) => {
 
+app.patch("/product/update-rental", async (req, res) => {
   console.log("update");
   try {
-    const { _id, available, status, make, model, description, address, price } = req.body;
+    const { _id, available, status, comments, isApproved, make, model, description, address, price } = req.body;
 
     if (!_id) {
       return res.status(400).send({ message: "_id field is required" });
+    }
+
+    // Find the rental item in the database
+    const rentalItem = await RentalProduct.findById(_id);
+
+    if (!rentalItem) {
+      return res.status(404).send({ message: "Rental item not found" });
+    }
+
+    // Find the user who created the rental item
+    const user = await userSchema.findById(rentalItem.postedBy);
+
+    if (!user) {
+      return res.status(404).send({ message: "User not found" });
     }
 
     // Update the rental item in the database
     const updatedItem = await RentalProduct.findByIdAndUpdate(
       { _id: _id },
       {
-        available: available, status: status, make: make, model: model,
+        available: available, status: status, comments: comments, isApproved: isApproved, make: make, model: model,
         description: description, address: address, price: price
       }
-
     );
 
-    if (!updatedItem) {
-      return res.status(404).send({ message: "Rental item not found" });
+    console.log("updatedItem", updatedItem);
+
+    // Prepare the email
+    var _subject = isApproved ? `Approval: ${updatedItem.make}` : `Rejection: ${updatedItem.make}`;
+    var _user = { name: user.name, email: user.email };
+    var _email = _user.email;
+    var _body = await fs.promises.readFile(isApproved ? "./emailTemplates/approvedemailTemplate.html" : "./emailTemplates/rejecteditemEmailTemplate.html");
+    var _data = _body.toString();
+
+    if (isApproved) {
+      _data = _data.replace("[Rentor's Name]", _user.name)
+        .replace("[Insert Item Name]", updatedItem.make)
+        .replace("[Insert Brief Description]", rentalItem.description)
+        .replace("[Insert Approval Date]", new Date().toLocaleDateString())
+        .replace("[Insert Item Category]", rentalItem.categories)
+        .replace("[Support Email]", constants.SUPPORT_EMAIL);
+    }else {
+      _data = _data.replace("[User's Name]", _user.name)
+        .replace("[Yuzu Support Email]", constants.SUPPORT_EMAIL)
+        .replace("(Back office to populate specific reason)", comments);
     }
 
+    // Send the email
+    await EmailServiceInstace.sendRentalUpdateEmail(_user.name, _email, _data, _subject);
+
     res.status(200).send({
-      message: "Rental item updated successfully",
+      message: "Rental item updated and email sent successfully",
       updatedItem,
     });
   } catch (error) {
@@ -199,10 +233,6 @@ app.patch("/product/update-rental", async (req, res) => {
     res.status(500).send({ message: "Server error", error: error.errors });
   }
 });
-
-
-
-
 const path = require('path');
 const { Stream } = require("stream");
 const query = require('./models/query');

@@ -23,6 +23,8 @@ const rentalProductSchema = new mongoose.Schema({
   year: Number,
   available: Boolean,
   isRented: Boolean,
+  Comments: String,
+  isApproved: Boolean,
   startdate: Date,
   reviewComments: [reviewSchema], // Modified to use reviewSchema
   enddate: Date,

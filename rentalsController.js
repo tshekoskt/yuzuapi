@@ -186,6 +186,61 @@ app.patch("/update-rental-item", async (req, res) => {
   }
 });
 
+
+//vreate a function of getting user by id
+async function getUserById(userId) {
+  try {
+    const user = await userSchema.findById
+      (userId);
+
+    return user;
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
+}
+
+app.patch("/reject-rental-item", async (req, res) => {
+  try {
+    const { itemId, userEmail, userName, rejectionReason } = req.body;
+
+    if (!itemId) {
+      return res.status(400).send({ message: "itemId field is required" });
+    }
+
+
+    // Update the rental item in the database
+    const updatedItem = await RentalProduct.findByIdAndUpdate(
+      itemId,
+      { status: "rejected" },
+      { new: true }
+    );
+
+    if (!updatedItem) {
+      return res.status(404).send({ message: "Rental item not found" });
+    }
+
+    // Prepare rejection email
+    let body = await fs.readFile("./emailTemplates/rejectionEmail.html");
+    let data = body.toString();
+    data = data.replace("[User's Name]", userName);
+    data = data.replace("[Rejection Reason]", rejectionReason);
+
+    let subject = 'Rejection Email for Rental Item Upload';
+
+    // Send rejection email using EmailServiceInstance
+    EmailServiceInstance.sendReviewHtmlBody(userEmail, data, subject);
+
+    res.status(200).send({
+      message: "Rental item rejected and email sent successfully",
+      updatedItem,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({ message: "Server error", error: error.errors });
+  }
+});
+
 app.get('/get-rental-item-public', async (req, res) => {
   try {
     const userId = req.query.userId;
@@ -757,7 +812,7 @@ app.post("/rental/cancel", verifyToken, async (req, res) => {
       );
 
       let account = await getRentorAccount(rentalProduct.postedBy);
-      
+
       if(account.length == 0){
         let newAccount = new accountSchema({
         description: "Cancel Rental",
@@ -894,7 +949,7 @@ app.post("/rental/cancelByRentor", verifyToken, async (req, res) => {
       );
 
       let account = await getRentorAccount(rentalProduct.postedBy);
-      
+
       if(account.length == 0){
         let newAccount = new accountSchema({
         description: "Rentor Cancel",
@@ -1125,7 +1180,7 @@ app.post("/rental/return", verifyToken, upload.array("photos", 5), async (req, r
       //send return email to rentor
       var _subject = `Item Return : Rental NO. ${rentalItem._id} Item Name ${rentalProduct.make}`;
       var _user = await getUserById(rentalProduct.postedBy);
-      var _email = _user.email; 
+      var _email = _user.email;
       var _body = await fs.readFile("./emailTemplates/torentorReturnTemplate.html");
       var _data = _body.toString();
       _data = _data.replace("[User Name]", _user.name)
