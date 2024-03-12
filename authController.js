@@ -261,6 +261,44 @@ app.patch("/update-profile", async (req, res) => {
   }
 });
 
+app.patch("/admin/update-profile", async (req, res) => {
+  try {
+    const userId = req.body._id;
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).send({
+        statuscode: 404,
+        message: "User not found"
+      });
+    }
+
+    // Define which properties an admin can update
+    const { name, surname, email, userGroup, phone } = req.body;
+
+    // Update the user object with the provided properties
+    user.name = name || user.name;
+    user.surname = surname || user.surname;
+    user.email = email || user.email;
+    user.userGroup = userGroup || user.userGroup;
+    user.phone = phone || user.phone;
+
+    await user.save();
+
+    res.send({
+      statuscode: 200,
+      message: "Profile updated successfully"
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({
+      statuscode: 500,
+      message: "Internal server error"
+    });
+  }
+});
+
+
 // Route to Validate OTP
 app.post("/validate-otp", async (req, res) => {
   try {
@@ -353,6 +391,7 @@ app.post("/forgot-password", async (req, res) => {
 app.post("/reset-password", async (req, res) => {
   try {
     const user = await User.findOne({ email: req.body.email });
+    console.log(user);
     if (!user) {
       return res.status(400).send({ statuscode: 400, message: "User not found" });
     }
@@ -440,7 +479,7 @@ app.get('/adminusers', async (req, res) => {
 
 app.get('/getadminuser', async (req, res) => {
   try {
-    if (!req.query.isAdmin) {
+    if (req.query.isAdmin) {
       return res.status(403).json({
         statuscode: 403,
         message: 'Forbidden: You are not authorized to access this resource.'
