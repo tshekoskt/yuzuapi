@@ -163,24 +163,24 @@ app.post('/register', async (req, res) => {
         });
 
         //registration confirmation email
-      try{
-        var subject = 'Admin Account Information';
-        var body = await fs.readFile("./emailTemplates/registrationTemplate.html");
-        var data = body.toString();
-        data = data.replace("[User Name]", req.body.name)
-        .replace("[Username]", req.body.email)
-        .replace("[TemporaryPassword]", hashedPassword)
-        .replace("[Email]", req.body.email)
-        .replaceAll("[Support Email Address]", constants.SUPPORT_EMAIL);
-        var results = await EmailServiceInstace.sendReviewHtmlBody(req.body.email, data, subject);
-      }
-      catch(error){
-        console.error(error);
-        return res.status(500).send({
-          statusCode: 500,
-          message: 'Failed to send email',
-        });
-      }
+        try {
+          var subject = 'Admin Account Information';
+          var body = await fs.readFile("./emailTemplates/registrationTemplate.html");
+          var data = body.toString();
+          data = data.replace("[User Name]", req.body.name)
+            .replace("[Username]", req.body.email)
+            .replace("[TemporaryPassword]", hashedPassword)
+            .replace("[Email]", req.body.email)
+            .replaceAll("[Support Email Address]", constants.SUPPORT_EMAIL);
+          var results = await EmailServiceInstace.sendReviewHtmlBody(req.body.email, data, subject);
+        }
+        catch (error) {
+          console.error(error);
+          return res.status(500).send({
+            statusCode: 500,
+            message: 'Failed to send email',
+          });
+        }
 
         await newUser.save();
         res.send({
@@ -240,11 +240,11 @@ app.patch("/update-profile", async (req, res) => {
       });
 
 
-        var subject = 'Account Information change';
-        var body = await fs.readFile("./emailTemplates/accountChangeTemplate.html");
-        var data = body.toString();
-        data = data.replace("[User Name]", req.body.name);
-        var results =  EmailServiceInstace.sendReviewHtmlBody(req.body.email, data, subject);
+    var subject = 'Account Information change';
+    var body = await fs.readFile("./emailTemplates/accountChangeTemplate.html");
+    var data = body.toString();
+    data = data.replace("[User Name]", req.body.name);
+    var results = EmailServiceInstace.sendReviewHtmlBody(req.body.email, data, subject);
 
 
     res.send({
@@ -287,6 +287,43 @@ app.patch("/admin/update-profile", async (req, res) => {
     res.send({
       statuscode: 200,
       message: "Profile updated successfully"
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({
+      statuscode: 500,
+      message: "Internal server error"
+    });
+  }
+});
+
+app.patch("/admin/update-user", async (req, res) => {
+  try {
+    const userId = req.body._id;
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).send({
+        statuscode: 404,
+        message: "User not found"
+      });
+    }
+
+    // Define which properties an admin can update
+    const { name, surname, email, userGroup, phone } = req.body;
+
+    // Update the user object with the provided properties
+    user.name = name || user.name;
+    user.surname = surname || user.surname;
+    user.email = email || user.email;
+    user.userGroup = userGroup || user.userGroup;
+    user.phone = phone || user.phone;
+
+    await user.save();
+
+    res.send({
+      statuscode: 200,
+      message: "User updated successfully"
     });
 
   } catch (error) {
@@ -479,13 +516,6 @@ app.get('/adminusers', async (req, res) => {
 
 app.get('/getadminuser', async (req, res) => {
   try {
-    if (req.query.isAdmin) {
-      return res.status(403).json({
-        statuscode: 403,
-        message: 'Forbidden: You are not authorized to access this resource.'
-      });
-    }
-
     const { id } = req.query;
 
     const user = await User.findById(id);
@@ -494,6 +524,13 @@ app.get('/getadminuser', async (req, res) => {
       return res.status(404).json({
         statuscode: 404,
         message: 'User not found'
+      });
+    }
+
+    if (!user.isAdmin) {
+      return res.status(403).json({
+        statuscode: 403,
+        message: 'Forbidden: You are not authorized to access this resource.'
       });
     }
 
