@@ -47,7 +47,7 @@ const verifyToken = (req, res, next) => {
   console.info("why are you calling me");
   const bearerHeader = req.headers["authorization"];
   if (!bearerHeader) {
-   return res.status(401).send("Access Denied");
+    return res.status(401).send("Access Denied");
   }
   const bearer = bearerHeader.split(" ");
   const bearerToken = bearer[1];
@@ -243,27 +243,17 @@ app.patch("/reject-rental-item", async (req, res) => {
   }
 });
 
-app.get('/get-rental-item-public', async (req, res) => {
+app.delete('/delete-rental-item/:id', async (req, res) => {
   try {
-    const userId = req.query.userId;
+    const rentalItemId = req.params.id;
+    const rentalItem = await RentalProduct.findById(rentalItemId);
+    if (!rentalItem) {
+      return res.status(404).send({ message: 'Rental item not found' });
+    }
 
-    // Fetch the rental items by user ID or perform any other necessary operations
-    const rentalItems = await RentalProduct.find({ postedBy: userId });
+    await RentalProduct.findByIdAndDelete(rentalItemId);
 
-    // Generate image URLs for each rental item
-    const rentalItemsWithImages = await Promise.all(
-      rentalItems.map(async (rentalItem) => {
-        const imageUrls = await Promise.all(
-          rentalItem.photos.map((photo) => {
-            const imageUrl = `http://144.126.196.146:3000/images/${photo}`;
-            return imageUrl;
-          })
-        );
-        return { ...rentalItem.toObject(), imageUrls };
-      })
-    );
-
-    res.status(200).send({ message: 'Rental items retrieved successfully', rentalItems: rentalItemsWithImages });
+    res.status(200).send({ message: 'Rental item deleted successfully' });
   } catch (error) {
     console.error(error);
     res.status(500).send({ message: 'Server error', error });
@@ -812,29 +802,29 @@ app.post("/rental/cancel", verifyToken, async (req, res) => {
 
       let account = await getRentorAccount(rentalProduct.postedBy);
 
-      if(account.length == 0){
+      if (account.length == 0) {
         let newAccount = new accountSchema({
-        description: "Cancel Rental",
-        oldbalance: 0,
-        amount:amountsResults.totalDueToRentor,
-        newbalance:amountsResults.totalDueToRentor,
-        transactiondate:currentDate,
-        ordernumber: rentalItem.ordernumber,
-        rentor:rentalProduct.postedBy
+          description: "Cancel Rental",
+          oldbalance: 0,
+          amount: amountsResults.totalDueToRentor,
+          newbalance: amountsResults.totalDueToRentor,
+          transactiondate: currentDate,
+          ordernumber: rentalItem.ordernumber,
+          rentor: rentalProduct.postedBy
         });
 
         await newAccount.save();
-      }else{
+      } else {
         let latestAccount = account[0];
-        let transactionAmount =  (parseFloat(latestAccount.newbalance)) + (parseFloat(amountsResults.totalDueToRentor));
-        let newAccount = new accountSchema ({
-          description:"Cancel Rental",
-          oldbalance:latestAccount.newbalance,
-          amount:amountsResults.totalDueToRentor,
-          newbalance:transactionAmount,
-          transactiondate:currentDate,
+        let transactionAmount = (parseFloat(latestAccount.newbalance)) + (parseFloat(amountsResults.totalDueToRentor));
+        let newAccount = new accountSchema({
+          description: "Cancel Rental",
+          oldbalance: latestAccount.newbalance,
+          amount: amountsResults.totalDueToRentor,
+          newbalance: transactionAmount,
+          transactiondate: currentDate,
           ordernumber: rentalItem.ordernumber,
-          rentor:rentalProduct.postedBy
+          rentor: rentalProduct.postedBy
         })
         await newAccount.save();
       }
@@ -949,29 +939,29 @@ app.post("/rental/cancelByRentor", verifyToken, async (req, res) => {
 
       let account = await getRentorAccount(rentalProduct.postedBy);
 
-      if(account.length == 0){
+      if (account.length == 0) {
         let newAccount = new accountSchema({
-        description: "Rentor Cancel",
-        oldbalance: 0,
-        amount:amountsResults.totalDueToRentor,
-        newbalance:amountsResults.totalDueToRentor,
-        transactiondate:currentDate,
-        ordernumber: rentalItem.ordernumber,
-        rentor:rentalProduct.postedBy
+          description: "Rentor Cancel",
+          oldbalance: 0,
+          amount: amountsResults.totalDueToRentor,
+          newbalance: amountsResults.totalDueToRentor,
+          transactiondate: currentDate,
+          ordernumber: rentalItem.ordernumber,
+          rentor: rentalProduct.postedBy
         });
 
         await newAccount.save();
-      }else{
+      } else {
         let latestAccount = account[0];
-        let transactionAmount =  (parseFloat(latestAccount.newbalance)) + (parseFloat(amountsResults.totalDueToRentor));
-        let newAccount = new accountSchema ({
-          description:"Rentor Cancel",
-          oldbalance:latestAccount.newbalance,
-          amount:amountsResults.totalDueToRentor,
-          newbalance:transactionAmount,
-          transactiondate:currentDate,
+        let transactionAmount = (parseFloat(latestAccount.newbalance)) + (parseFloat(amountsResults.totalDueToRentor));
+        let newAccount = new accountSchema({
+          description: "Rentor Cancel",
+          oldbalance: latestAccount.newbalance,
+          amount: amountsResults.totalDueToRentor,
+          newbalance: transactionAmount,
+          transactiondate: currentDate,
           ordernumber: rentalItem.ordernumber,
-          rentor:rentalProduct.postedBy
+          rentor: rentalProduct.postedBy
         })
         await newAccount.save();
       }
@@ -1088,29 +1078,29 @@ app.post("/rental/return", verifyToken, upload.array("photos", 5), async (req, r
 
       let account = await getRentorAccount(rentalProduct.postedBy);
       //console.log("what is the value of account :", account);
-      if(account.length == 0){
+      if (account.length == 0) {
         let newAccount = new accountSchema({
-        description: "Rental",
-        oldbalance: 0,
-        amount:amountsResults.totalDueToRentor,
-        newbalance:amountsResults.totalDueToRentor,
-        transactiondate:currentDate,
-        ordernumber: rentalItem.ordernumber,
-        rentor:rentalProduct.postedBy
+          description: "Rental",
+          oldbalance: 0,
+          amount: amountsResults.totalDueToRentor,
+          newbalance: amountsResults.totalDueToRentor,
+          transactiondate: currentDate,
+          ordernumber: rentalItem.ordernumber,
+          rentor: rentalProduct.postedBy
         });
 
         await newAccount.save();
-      }else{
+      } else {
         let latestAccount = account[0];
-        let transactionAmount =  (parseFloat(latestAccount.newbalance)) + (parseFloat(amountsResults.totalDueToRentor));
-        let newAccount = new accountSchema ({
-          description:"Rental",
-          oldbalance:latestAccount.newbalance,
-          amount:amountsResults.totalDueToRentor,
-          newbalance:transactionAmount,
-          transactiondate:currentDate,
+        let transactionAmount = (parseFloat(latestAccount.newbalance)) + (parseFloat(amountsResults.totalDueToRentor));
+        let newAccount = new accountSchema({
+          description: "Rental",
+          oldbalance: latestAccount.newbalance,
+          amount: amountsResults.totalDueToRentor,
+          newbalance: transactionAmount,
+          transactiondate: currentDate,
           ordernumber: rentalItem.ordernumber,
-          rentor:rentalProduct.postedBy
+          rentor: rentalProduct.postedBy
         })
         await newAccount.save();
       }
@@ -1326,15 +1316,15 @@ app.post(`/rental/receivedByRentor`, verifyToken, async (req, res) => {
 /**
  * Get All transaction from previous year to current
  */
-app.get("/getRentalsfromPreviousYearToCurrent", async (req,res) => {
+app.get("/getRentalsfromPreviousYearToCurrent", async (req, res) => {
   console.warn('inside getRentalsfromPreviousYearToCurrent');
-  try{
-    
+  try {
+
     var previousYear = (new Date().getFullYear()) - 1;
     console.log("previous year :", previousYear);
-   
+
     let dataSummary = [];
-      
+
     var rentals = await RentalItem.find({
       $expr: {
         $gte: [
@@ -1344,42 +1334,42 @@ app.get("/getRentalsfromPreviousYearToCurrent", async (req,res) => {
           previousYear
         ]
       }
-    }).sort({"createddate":1});
-    
+    }).sort({ "createddate": 1 });
+
     //console.log("rentals : ", rentals);
 
-    if(rentals.length > 0){
+    if (rentals.length > 0) {
       rentals.forEach(element => {
         let _year = new Date(element.createddate).getFullYear();
         let _month = new Date(element.createddate).getMonth() + 1;
         let _day = new Date(element.createddate).getDate();
 
-        if(dataSummary.length == 0){
+        if (dataSummary.length == 0) {
           dataSummary.push({
             year: _year,
             month: _month,
             day: _day,
             amount: parseFloat(element.totalamount)
           })
-        }else{
-          let indexOf = dataSummary.findIndex(x=> x.year == _year && x.month == _month && x.day == _day);
-          if(indexOf == -1){
+        } else {
+          let indexOf = dataSummary.findIndex(x => x.year == _year && x.month == _month && x.day == _day);
+          if (indexOf == -1) {
             dataSummary.push({
               year: _year,
               month: _month,
               day: _day,
               amount: parseFloat(element.totalamount)
             })
-          }else{
+          } else {
             dataSummary[indexOf].amount = parseFloat(dataSummary[indexOf].amount) + parseFloat(element.totalamount);
           }
         }
       });
       res.status(200).send(dataSummary);
-    }else{
-    res.status(200).send(rentals);
+    } else {
+      res.status(200).send(rentals);
     }
-  }catch(err){
+  } catch (err) {
     console.log("getFromPreviousYearRentals -  :", err);
     res.status(500).send({ message: "Server error", error: err.errors });
   }
@@ -1471,11 +1461,11 @@ refundTransaction = (transaction) => {
 /**
  * Get from Account
  */
-getRentorAccount = async (userId)=>{
+getRentorAccount = async (userId) => {
   let account = await accountSchema.find({
-    rentor:userId
+    rentor: userId
   }).sort(
-    {transactiondate :-1}
+    { transactiondate: -1 }
   );
 
   return account;
